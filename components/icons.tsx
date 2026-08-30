@@ -196,3 +196,18 @@ export const IconMonitor = (p: IconProps) => (
     <path d="M12 17v4" />
   </Svg>
 );
+
+export const IconRepeat = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 10V8a3 3 0 0 1 3-3h10" />
+    <path d="m14 2 3 3-3 3" />
+    <path d="M20 14v2a3 3 0 0 1-3 3H7" />
+    <path d="m10 22-3-3 3-3" />
+  </Svg>
+);
+
+export const IconFlame = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 2.5c.6 3.2-1.2 4.6-2.6 6C7.8 10 6.5 11.5 6.5 14a5.5 5.5 0 0 0 11 0c0-2.3-1.1-3.9-2.4-5.3-.4 1-1.1 1.7-2 2 .6-2.9-.3-6.3-1.6-8.2Z" />
+  </Svg>
+);

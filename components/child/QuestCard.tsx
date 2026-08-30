@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { submitTaskAction } from "@/app/actions/tasks";
 import type { TaskStatus } from "@/lib/domain";
 import { FormError, Pill, RewardPills, StatusPill } from "@/components/ui";
+import { OverdueCountdown } from "./OverdueCountdown";
 
 export type Quest = {
   taskId: string;
@@ -16,6 +17,12 @@ export type Quest = {
   parentComment: string | null;
   xp: number;
   coins: number;
+  /** Момент зникнення — лише для прострочених квестів. */
+  lostAtIso: string | null;
+  /** Зараховується без батьківської перевірки. */
+  autoApprove: boolean;
+  /** Створене з повторюваного шаблону. */
+  repeating: boolean;
 };
 
 export function QuestCard({ quest }: { quest: Quest }) {
@@ -42,9 +49,7 @@ export function QuestCard({ quest }: { quest: Quest }) {
 
       <p className="mb-3 text-sm text-[var(--color-muted)]">
         {quest.dueLabel}
-        {quest.status === "ACTIVE" && (
-          <span className="text-[var(--color-muted)]"> · лишилось {quest.timeLeft}</span>
-        )}
+        {quest.status === "ACTIVE" && <span> · лишилось {quest.timeLeft}</span>}
       </p>
 
       {quest.status === "REJECTED" && quest.parentComment && (
@@ -59,24 +64,22 @@ export function QuestCard({ quest }: { quest: Quest }) {
         </p>
       )}
 
-      {quest.status === "OVERDUE" && (
-        <p className="mb-3 rounded-[var(--radius-control)] bg-[var(--color-slate-soft)] px-3 py-2 text-sm text-[var(--color-slate-ink)]">
-          Термін минув. Попроси батьків перенести дедлайн, якщо ще хочеш виконати.
-        </p>
+      {quest.status === "OVERDUE" && quest.lostAtIso && (
+        <OverdueCountdown lostAtIso={quest.lostAtIso} />
       )}
 
-      {/* Для активного квесту XP уже показані плашкою в куті — тут лишаються тільки коіни. */}
-      {quest.status === "ACTIVE"
-        ? quest.coins > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
-              <Pill tone="mint">+{quest.coins} коінів</Pill>
-            </div>
-          )
-        : (
-            <div className="mb-3 flex flex-wrap gap-2">
-              <RewardPills xp={quest.xp} coins={quest.coins} />
-            </div>
-          )}
+      {/* Для активного квесту XP уже показані плашкою в куті — тут лишаються коіни й підказки. */}
+      <div className="mb-3 flex flex-wrap gap-2">
+        {quest.status === "ACTIVE" ? (
+          <>
+            {quest.coins > 0 && <Pill tone="mint">+{quest.coins} коінів</Pill>}
+            {quest.autoApprove && <Pill tone="green">Зарахується одразу</Pill>}
+            {quest.repeating && <Pill tone="sky">Повторюваний</Pill>}
+          </>
+        ) : (
+          <RewardPills xp={quest.xp} coins={quest.coins} />
+        )}
+      </div>
 
       {canSubmit && (
         <form action={formAction} className="flex flex-col gap-2.5">

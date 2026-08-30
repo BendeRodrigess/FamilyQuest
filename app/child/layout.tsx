@@ -2,14 +2,16 @@ import type { ReactNode } from "react";
 
 import { requireChild } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { syncOverdueTasks } from "@/lib/tasks";
+import { syncTaskStatuses } from "@/lib/tasks";
+import { generateTodayTasks } from "@/lib/templates";
 import { levelInfo } from "@/lib/levels";
 import { AppShell } from "@/components/AppShell";
 
 export default async function ChildLayout({ children }: { children: ReactNode }) {
   const child = await requireChild();
 
-  await syncOverdueTasks(child.familyId);
+  await generateTodayTasks(child.familyId);
+  await syncTaskStatuses(child.familyId);
 
   const activeCount = await prisma.task.count({
     where: { childId: child.id, status: { in: ["ACTIVE", "REJECTED"] } },

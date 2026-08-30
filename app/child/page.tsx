@@ -3,9 +3,11 @@ import Link from "next/link";
 import { requireChild } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { levelInfo } from "@/lib/levels";
+import { lostAt, DEFAULT_GRACE_MINUTES } from "@/lib/tasks";
+import { currentStreak, streakLabel } from "@/lib/streak";
 import { formatDueLabel, formatTimeLeft, vocative } from "@/lib/format";
 import type { TaskStatus } from "@/lib/domain";
-import { IconCheck, IconCoin, IconSparkles, IconZap } from "@/components/icons";
+import { IconCoin, IconFlame, IconSparkles, IconZap } from "@/components/icons";
 import { EmptyState, ProgressBar, SectionCard, StatCard } from "@/components/ui";
 import { QuestCard, type Quest } from "@/components/child/QuestCard";
 
@@ -20,19 +22,20 @@ export default async function ChildHomePage() {
   const child = await requireChild();
   const now = new Date();
 
-  const [openTasks, pendingTasks, doneCount] = await Promise.all([
+  const [openTasks, pendingTasks, streak] = await Promise.all([
     prisma.task.findMany({
-      where: { childId: child.id, status: { in: ["ACTIVE", "REJECTED"] } },
+      where: { childId: child.id, status: { in: ["ACTIVE", "REJECTED", "OVERDUE"] } },
       orderBy: { dueAt: "asc" },
     }),
     prisma.task.findMany({
       where: { childId: child.id, status: "PENDING_REVIEW" },
       orderBy: { submittedAt: "desc" },
     }),
-    prisma.task.count({ where: { childId: child.id, status: "DONE" } }),
+    currentStreak(child.id, now),
   ]);
 
   const info = levelInfo(child.xp);
+  const grace = child.family.overdueGraceMinutes ?? DEFAULT_GRACE_MINUTES;
 
   const toQuest = (task: (typeof openTasks)[number]): Quest => ({
     taskId: task.id,
@@ -44,10 +47,15 @@ export default async function ChildHomePage() {
     parentComment: task.parentComment,
     xp: task.xpReward,
     coins: task.coinReward,
+    lostAtIso: task.status === "OVERDUE" ? lostAt(task.dueAt, grace).toISOString() : null,
+    autoApprove: task.autoApprove,
+    repeating: task.templateId !== null,
   });
 
   const quests = openTasks.map(toQuest);
   const pending = pendingTasks.map(toQuest);
+  // Прострочені не рахуємо у вітанні: там уже цокає таймер, а не «на тебе чекає».
+  const activeCount = quests.filter((quest) => quest.status !== "OVERDUE").length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -55,7 +63,7 @@ export default async function ChildHomePage() {
         <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight">
           Привіт, {vocative(child.displayName)}! <span aria-hidden="true">👋</span>
         </h1>
-        <p className="mt-1 text-[var(--color-muted)]">{questsPhrase(quests.length)}</p>
+        <p className="mt-1 text-[var(--color-muted)]">{questsPhrase(activeCount)}</p>
       </header>
 
       {/* Прогрес — головний емоційний блок дитячого екрана */}
@@ -85,13 +93,13 @@ export default async function ChildHomePage() {
 
       <div className="grid grid-cols-3 gap-3">
         <StatCard icon={<IconZap />} tone="lilac" label="Усього XP" value={child.xp} />
+        <StatCard icon={<IconCoin />} tone="mint" label="Мої коіни" value={child.coinsBalance} />
         <StatCard
-          icon={<IconCoin />}
-          tone="mint"
-          label="Мої коіни"
-          value={child.coinsBalance}
+          icon={<IconFlame />}
+          tone="amber"
+          label="Серія виконань"
+          value={streak === 0 ? "—" : streakLabel(streak)}
         />
-        <StatCard icon={<IconCheck />} tone="amber" label="Виконано" value={doneCount} />
       </div>
 
       <SectionCard

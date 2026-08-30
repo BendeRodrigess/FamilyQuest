@@ -5,6 +5,7 @@ import { SectionCard } from "@/components/ui";
 import { ThemeChoice } from "@/components/theme/ThemeChoice";
 import { IconLogout } from "@/components/icons";
 import { FamilyNameForm } from "@/components/parent/FamilyNameForm";
+import { FamilyPreferencesForm } from "@/components/parent/FamilyPreferencesForm";
 
 export default async function ParentSettingsPage() {
   const parent = await requireParent();
@@ -34,6 +35,13 @@ export default async function ParentSettingsPage() {
             мами й тата з&apos;являться пізніше.
           </p>
         </div>
+      </SectionCard>
+
+      <SectionCard title="Правила сім'ї">
+        <FamilyPreferencesForm
+          showSiblingProgress={parent.family.showSiblingProgress}
+          overdueGraceMinutes={parent.family.overdueGraceMinutes}
+        />
       </SectionCard>
 
       <SectionCard title="Вигляд">

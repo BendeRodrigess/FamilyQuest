@@ -166,15 +166,25 @@ export async function submitTaskAction(
   const taskId = String(formData.get("taskId") ?? "");
   const comment = String(formData.get("comment") ?? "");
 
+  let result;
   try {
-    await submitTask(taskId, child.id, comment);
+    result = await submitTask(taskId, child.id, comment);
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Не вдалося надіслати на перевірку.");
   }
 
   revalidateChild();
   revalidateParent();
-  return ok("Надіслано батькам на перевірку.");
+
+  if (!result.autoApproved || !result.credited) {
+    return ok("Надіслано батькам на перевірку.");
+  }
+
+  const { xpAwarded, coinsAwarded, levelBefore, levelAfter } = result.credited;
+  const coins = coinsAwarded > 0 ? ` і ${coinsAwarded} коінів` : "";
+  const levelUp = levelAfter > levelBefore ? ` Новий рівень — ${levelAfter}!` : "";
+
+  return ok(`Зараховано одразу: +${xpAwarded} XP${coins}.${levelUp}`);
 }
 
 /* ---------- Перевірка батьками ---------- */

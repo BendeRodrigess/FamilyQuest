@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { requireChild } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { lostAt, DEFAULT_GRACE_MINUTES } from "@/lib/tasks";
 import { formatDueLabel, formatTimeLeft } from "@/lib/format";
 import type { TaskStatus } from "@/lib/domain";
 import { IconSparkles } from "@/components/icons";
@@ -44,6 +45,7 @@ export default async function ChildTasksPage({
   ]);
 
   const countByStatus = new Map(counts.map((row) => [row.status, row._count._all]));
+  const grace = child.family.overdueGraceMinutes ?? DEFAULT_GRACE_MINUTES;
 
   const quests: Quest[] = tasks.map((task) => ({
     taskId: task.id,
@@ -55,6 +57,9 @@ export default async function ChildTasksPage({
     parentComment: task.parentComment,
     xp: task.xpReward,
     coins: task.coinReward,
+    lostAtIso: task.status === "OVERDUE" ? lostAt(task.dueAt, grace).toISOString() : null,
+    autoApprove: task.autoApprove,
+    repeating: task.templateId !== null,
   }));
 
   return (

@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { requireParent } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toDateTimeLocalValue } from "@/lib/format";
+import { EVERY_DAY } from "@/lib/domain";
 import { SectionCard } from "@/components/ui";
-import { TaskForm } from "@/components/parent/TaskForm";
+import { NewTaskTabs } from "@/components/parent/NewTaskTabs";
 
 export default async function NewTaskPage() {
   const parent = await requireParent();
@@ -36,16 +37,25 @@ export default async function NewTaskPage() {
       </header>
 
       <SectionCard title="Деталі">
-        <TaskForm
-          mode="create"
+        <NewTaskTabs
           childOptions={children}
-          values={{
+          taskValues={{
             childId: children[0].id,
             title: "",
             description: "",
             dueAtLocal: toDateTimeLocalValue(due),
             xpReward: 15,
             coinReward: 0,
+          }}
+          templateValues={{
+            childId: children[0].id,
+            title: "",
+            description: "",
+            dueTime: "20:00",
+            weekdays: EVERY_DAY,
+            xpReward: 10,
+            coinReward: 0,
+            autoApprove: false,
           }}
         />
       </SectionCard>

@@ -22,9 +22,51 @@ model Family {
   // Чи бачать діти прогрес одне одного (Хвиля 2).
   showSiblingProgress Boolean @default(true)
 
-  users  User[]
-  tasks  Task[]
-  ledger LedgerEntry[]
+  users     User[]
+  tasks     Task[]
+  templates TaskTemplate[]
+  ledger    LedgerEntry[]
+}
+
+// Шаблон повторюваного завдання. Сам по собі не є завданням:
+// щодня з нього народжується окремий екземпляр Task, який і проходить
+// звичайний цикл виконання та перевірки.
+model TaskTemplate {
+  id       String @id @default(cuid())
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  childId  String
+  child    User   @relation("ChildTemplates", fields: [childId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+
+  xpReward   Int
+  coinReward Int @default(0)
+
+  // Дні тижня у форматі Date.getDay(): "0" — неділя, "1" — понеділок…
+  // Щоденне завдання зберігається як "0123456".
+  weekdays String
+  // Час дедлайну в межах дня, "HH:mm".
+  dueTime String
+
+  // Дрібні щоденні звички не варті окремого підтвердження щоразу:
+  // з цим прапорцем натискання дитини одразу зараховує винагороду.
+  autoApprove Boolean @default(false)
+
+  isPaused Boolean @default(false)
+
+  // Дата останньої генерації, "YYYY-MM-DD" — захист від дублів
+  // при кількох одночасних відкриттях застосунку.
+  lastGeneratedOn String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks Task[]
+
+  @@index([familyId])
+  @@index([childId, isPaused])
 }
 
 // Один акаунт на батьків (спільний для тата, мами, бабусі) + окремі акаунти дітей.
@@ -51,7 +93,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   sessions      Session[]
-  assignedTasks Task[]        @relation("ChildTasks")
+  assignedTasks Task[]         @relation("ChildTasks")
+  templates     TaskTemplate[] @relation("ChildTemplates")
   ledger        LedgerEntry[]
 
   @@index([familyId])
@@ -82,7 +125,7 @@ model Task {
   xpReward   Int
   coinReward Int @default(0)
 
-  // ACTIVE | PENDING_REVIEW | DONE | REJECTED | OVERDUE
+  // ACTIVE | PENDING_REVIEW | DONE | REJECTED | OVERDUE | LOST
   status String @default("ACTIVE")
 
   childComment  String? // коментар дитини при поданні на перевірку
@@ -91,11 +134,22 @@ model Task {
   submittedAt DateTime?
   reviewedAt  DateTime?
 
+  // Звідки взялося завдання. Порожньо — створене вручну.
+  templateId String?
+  template   TaskTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  // День, за який згенеровано екземпляр, "YYYY-MM-DD".
+  occurrenceDate String?
+
+  // Копія прапорця шаблону на момент створення: зміна шаблону
+  // не повинна змінювати правила для вже виданих завдань.
+  autoApprove Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   ledger LedgerEntry[]
 
+  @@unique([templateId, occurrenceDate])
   @@index([familyId])
   @@index([childId, status])
 }

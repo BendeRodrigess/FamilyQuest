@@ -47,6 +47,7 @@ function buildNav(role: "PARENT" | "CHILD", badge?: number): NavItem[] {
   return [
     { href: "/child", label: "Головна", shortLabel: "Головна", icon: <IconHome className={iconClass} /> },
     { href: "/child/tasks", label: "Мої квести", shortLabel: "Квести", icon: <IconTasks className={iconClass} />, badge },
+    { href: "/child/family", label: "Моя сім'я", shortLabel: "Сім'я", icon: <IconFamily className={iconClass} /> },
     { href: "/child/rewards", label: "Винагороди", shortLabel: "Коіни", icon: <IconRewards className={iconClass} /> },
     { href: "/child/settings", label: "Налаштування", shortLabel: "Ще", icon: <IconSettings className={iconClass} /> },
   ];

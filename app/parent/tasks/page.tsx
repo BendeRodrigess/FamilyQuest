@@ -3,16 +3,18 @@ import Link from "next/link";
 import { requireParent } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatShortDate, formatSubmittedLabel } from "@/lib/format";
-import type { TaskStatus } from "@/lib/domain";
-import { IconClipboard, IconEdit, IconPlus } from "@/components/icons";
-import { Avatar, EmptyState, RewardPills, SectionCard, StatusPill } from "@/components/ui";
+import { describeWeekdays, type TaskStatus } from "@/lib/domain";
+import { IconClipboard, IconEdit, IconPlus, IconRepeat } from "@/components/icons";
+import { Avatar, EmptyState, Pill, RewardPills, SectionCard, StatusPill } from "@/components/ui";
 import { ReviewCard } from "@/components/parent/ReviewCard";
 import { DeleteTaskButton } from "@/components/parent/DeleteTaskButton";
+import { TemplateCard, type TemplateSummary } from "@/components/parent/TemplateCard";
 
 const FILTERS = [
   { key: "review", label: "На перевірці", statuses: ["PENDING_REVIEW"] },
   { key: "active", label: "Активні", statuses: ["ACTIVE", "REJECTED"] },
-  { key: "overdue", label: "Прострочені", statuses: ["OVERDUE"] },
+  { key: "repeating", label: "Повторювані", statuses: [] },
+  { key: "overdue", label: "Прострочені", statuses: ["OVERDUE", "LOST"] },
   { key: "done", label: "Виконані", statuses: ["DONE"] },
   { key: "all", label: "Усі", statuses: [] },
 ] as const;
@@ -26,36 +28,63 @@ export default async function ParentTasksPage({
 }) {
   const parent = await requireParent();
   const params = await searchParams;
+  const familyId = parent.familyId;
 
   const activeFilter: FilterKey =
     (FILTERS.find((f) => f.key === params.filter)?.key as FilterKey) ?? "review";
-  const statuses = FILTERS.find((f) => f.key === activeFilter)!.statuses;
+  const filter = FILTERS.find((f) => f.key === activeFilter)!;
+  const showTemplates = activeFilter === "repeating";
 
   const now = new Date();
 
-  const [tasks, childCount, counts] = await Promise.all([
-    prisma.task.findMany({
-      where: {
-        familyId: parent.familyId,
-        ...(statuses.length > 0 ? { status: { in: [...statuses] } } : {}),
-      },
-      include: { child: true },
-      orderBy: [{ status: "asc" }, { dueAt: "asc" }],
-      take: 100,
-    }),
-    prisma.user.count({ where: { familyId: parent.familyId, role: "CHILD" } }),
+  const [tasks, templates, childCount, counts, templateCount] = await Promise.all([
+    showTemplates
+      ? Promise.resolve([])
+      : prisma.task.findMany({
+          where: {
+            familyId,
+            ...(filter.statuses.length > 0 ? { status: { in: [...filter.statuses] } } : {}),
+          },
+          include: { child: true },
+          orderBy: [{ status: "asc" }, { dueAt: "asc" }],
+          take: 100,
+        }),
+    showTemplates
+      ? prisma.taskTemplate.findMany({
+          where: { familyId },
+          include: { child: true },
+          orderBy: [{ isPaused: "asc" }, { createdAt: "asc" }],
+        })
+      : Promise.resolve([]),
+    prisma.user.count({ where: { familyId, role: "CHILD" } }),
     prisma.task.groupBy({
       by: ["status"],
-      where: { familyId: parent.familyId },
+      where: { familyId },
       _count: { _all: true },
     }),
+    prisma.taskTemplate.count({ where: { familyId } }),
   ]);
 
   const countByStatus = new Map(counts.map((row) => [row.status, row._count._all]));
-  const countFor = (keys: readonly string[]) =>
-    keys.length === 0
-      ? counts.reduce((sum, row) => sum + row._count._all, 0)
-      : keys.reduce((sum, key) => sum + (countByStatus.get(key) ?? 0), 0);
+
+  const countFor = (key: FilterKey, statuses: readonly string[]) => {
+    if (key === "repeating") return templateCount;
+    if (statuses.length === 0) return counts.reduce((sum, row) => sum + row._count._all, 0);
+    return statuses.reduce((sum, status) => sum + (countByStatus.get(status) ?? 0), 0);
+  };
+
+  const templateSummaries: TemplateSummary[] = templates.map((template) => ({
+    id: template.id,
+    title: template.title,
+    childName: template.child.displayName,
+    childColor: template.child.avatarColor,
+    scheduleLabel: describeWeekdays(template.weekdays),
+    dueTime: template.dueTime,
+    xp: template.xpReward,
+    coins: template.coinReward,
+    autoApprove: template.autoApprove,
+    isPaused: template.isPaused,
+  }));
 
   return (
     <div className="flex flex-col gap-5">
@@ -76,26 +105,39 @@ export default async function ParentTasksPage({
       </header>
 
       <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:px-0">
-        {FILTERS.map((filter) => {
-          const isActive = filter.key === activeFilter;
-          const count = countFor(filter.statuses);
+        {FILTERS.map((item) => {
+          const isActive = item.key === activeFilter;
           return (
             <Link
-              key={filter.key}
-              href={`/parent/tasks?filter=${filter.key}`}
+              key={item.key}
+              href={`/parent/tasks?filter=${item.key}`}
               className={`fq-pill shrink-0 px-3.5 py-2 ${
                 isActive ? "fq-pill-lilac" : "fq-pill-grey"
               }`}
             >
-              {filter.label}
-              <span className={isActive ? "opacity-70" : "opacity-60"}>{count}</span>
+              {item.label}
+              <span className="opacity-65">{countFor(item.key, item.statuses)}</span>
             </Link>
           );
         })}
       </nav>
 
-      <SectionCard title={FILTERS.find((f) => f.key === activeFilter)!.label}>
-        {tasks.length === 0 ? (
+      <SectionCard title={filter.label}>
+        {showTemplates ? (
+          templateSummaries.length === 0 ? (
+            <EmptyState
+              icon={<IconRepeat className="h-7 w-7" />}
+              title="Повторюваних завдань ще немає"
+              hint="Створи одне — і воно з'являтиметься саме у вибрані дні, без нагадувань з твого боку."
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {templateSummaries.map((template) => (
+                <TemplateCard key={template.id} template={template} />
+              ))}
+            </div>
+          )
+        ) : tasks.length === 0 ? (
           <EmptyState
             icon={<IconClipboard className="h-7 w-7" />}
             title="Тут порожньо"
@@ -140,6 +182,12 @@ export default async function ParentTasksPage({
                     <span>{task.child.displayName}</span>
                     <span aria-hidden="true">·</span>
                     <span>{formatShortDate(task.dueAt, now)}</span>
+                    {task.templateId && (
+                      <Pill tone="sky">
+                        <IconRepeat className="h-3.5 w-3.5" />
+                        Повторюване
+                      </Pill>
+                    )}
                   </div>
 
                   {task.status === "REJECTED" && task.parentComment && (
