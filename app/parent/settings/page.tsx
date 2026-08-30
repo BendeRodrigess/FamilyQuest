@@ -2,6 +2,7 @@ import { requireParent } from "@/lib/auth";
 import { logoutAction } from "@/app/actions/auth";
 import { BASE_XP, XP_STEP, xpToAdvanceFrom } from "@/lib/levels";
 import { SectionCard } from "@/components/ui";
+import { ThemeChoice } from "@/components/theme/ThemeChoice";
 import { IconLogout } from "@/components/icons";
 import { FamilyNameForm } from "@/components/parent/FamilyNameForm";
 
@@ -33,6 +34,10 @@ export default async function ParentSettingsPage() {
             мами й тата з&apos;являться пізніше.
           </p>
         </div>
+      </SectionCard>
+
+      <SectionCard title="Вигляд">
+        <ThemeChoice />
       </SectionCard>
 
       <SectionCard title="Як працюють рівні">

@@ -59,8 +59,14 @@ export default async function ChildRewardsPage() {
                     className="fq-icon-tile !h-9 !w-9"
                     style={
                       isXp
-                        ? { background: "#efeafe", color: "#5231d6" }
-                        : { background: "#e2f3ea", color: "#1f7a55" }
+                        ? {
+                            background: "var(--color-brand-soft)",
+                            color: "var(--color-brand-ink)",
+                          }
+                        : {
+                            background: "var(--color-mint-soft)",
+                            color: "var(--color-mint-ink)",
+                          }
                     }
                   >
                     {isXp ? <IconZap className="h-4 w-4" /> : <IconCoin className="h-4 w-4" />}

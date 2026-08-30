@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+
 export function AuthLayout({
   title,
   subtitle,
@@ -13,7 +15,11 @@ export function AuthLayout({
   footer: ReactNode;
 }) {
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-4 py-10">
+    <div className="relative flex min-h-full flex-col items-center justify-center px-4 py-10">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-[420px]">
         <Link href="/" className="mb-7 flex items-center justify-center gap-2.5">
           <span className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[var(--color-brand)] text-white">

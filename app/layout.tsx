@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -21,7 +23,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6c4cf2",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#6c4cf2" },
+    { media: "(prefers-color-scheme: dark)", color: "#131220" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -29,10 +34,21 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uk" className={`${manrope.variable} h-full antialiased`}>
+    // suppressHydrationWarning: атрибут data-theme проставляє скрипт нижче,
+    // ще до гідратації, тому серверна й клієнтська розмітка тут відрізняються.
+    <html
+      lang="uk"
+      className={`${manrope.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full">
-        {children}
-        <ServiceWorkerRegistrar />
+        <ThemeProvider>
+          {children}
+          <ServiceWorkerRegistrar />
+        </ThemeProvider>
       </body>
     </html>
   );

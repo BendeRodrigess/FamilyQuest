@@ -2,8 +2,14 @@
 
 /* ============================================================
    FamilyQuest — візуальна система
-   Світла тема, м'які картки, фіолетовий акцент, пастельні плашки.
+   М'які картки, фіолетовий акцент, пастельні плашки.
    Дружньо, але без надмірної дитячості: підходить і на 7, і на 15 років.
+
+   Тема перемикається трьома способами:
+   - :root                                   світла (за замовчуванням)
+   - :root[data-theme="dark"]                примусово темна
+   - @media (prefers-color-scheme: dark)     системна, якщо вибір не зроблено
+   Усі кольори — змінні, тому вистачає перевизначити їх у трьох місцях.
    ============================================================ */
 
 @theme {
@@ -17,6 +23,7 @@
   --color-ink: #1a1830;
   --color-ink-soft: #4a4766;
   --color-muted: #706d8c;
+  --color-placeholder: #a5a2b8;
 
   /* Основний акцент */
   --color-brand: #6c4cf2;
@@ -46,6 +53,20 @@
   --color-slate-soft: #eeedf3;
   --color-slate-ink: #6b6885;
 
+  /* Кольори аватарів дітей */
+  --color-avatar-violet-bg: #ede7fe;
+  --color-avatar-violet-fg: #5231d6;
+  --color-avatar-mint-bg: #dcf1e6;
+  --color-avatar-mint-fg: #1f7a55;
+  --color-avatar-amber-bg: #fbe8cd;
+  --color-avatar-amber-fg: #97591f;
+  --color-avatar-rose-bg: #fbe0e5;
+  --color-avatar-rose-fg: #a83a5c;
+  --color-avatar-sky-bg: #dceafa;
+  --color-avatar-sky-fg: #245c94;
+  --color-avatar-lime-bg: #e6f2d4;
+  --color-avatar-lime-fg: #4d7220;
+
   /* Заокруглення */
   --radius-card: 20px;
   --radius-inner: 16px;
@@ -54,6 +75,124 @@
 
 :root {
   color-scheme: light;
+  --fq-shadow-card:
+    0 1px 2px rgb(23 22 48 / 0.04),
+    0 8px 24px rgb(23 22 48 / 0.04);
+}
+
+/* --- Темна тема, коли вибір користувача не зроблено (режим «системна») --- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-canvas: #131220;
+    --color-surface: #1c1a2b;
+    --color-line: #2a2740;
+    --color-line-strong: #393553;
+    --color-ink: #f3f1fa;
+    --color-ink-soft: #cbc7dd;
+    --color-muted: #9995b1;
+    --color-placeholder: #6f6b88;
+
+    --color-brand: #8468ff;
+    --color-brand-strong: #9780ff;
+    --color-brand-ink: #b6a2ff;
+    --color-brand-soft: #2a2445;
+    --color-brand-soft-strong: #3a3163;
+
+    --color-green: #24996b;
+    --color-green-strong: #2fae7c;
+    --color-green-soft: #16352a;
+    --color-green-ink: #6ed3a6;
+
+    --color-amber-soft: #3a2c17;
+    --color-amber-ink: #e8b877;
+
+    --color-rose-soft: #3a1f27;
+    --color-rose-ink: #f19aa4;
+
+    --color-mint-soft: #14342a;
+    --color-mint-ink: #6fd2a6;
+
+    --color-sky-soft: #17293f;
+    --color-sky-ink: #8ec0f2;
+
+    --color-slate-soft: #262338;
+    --color-slate-ink: #a7a3bf;
+
+    --color-avatar-violet-bg: #2f2750;
+    --color-avatar-violet-fg: #b6a2ff;
+    --color-avatar-mint-bg: #14342a;
+    --color-avatar-mint-fg: #6fd2a6;
+    --color-avatar-amber-bg: #3a2c17;
+    --color-avatar-amber-fg: #e8b877;
+    --color-avatar-rose-bg: #3a1f27;
+    --color-avatar-rose-fg: #f19aa4;
+    --color-avatar-sky-bg: #17293f;
+    --color-avatar-sky-fg: #8ec0f2;
+    --color-avatar-lime-bg: #23310f;
+    --color-avatar-lime-fg: #b4da7c;
+
+    --fq-shadow-card:
+      0 1px 2px rgb(0 0 0 / 0.3),
+      0 8px 24px rgb(0 0 0 / 0.22);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #131220;
+  --color-surface: #1c1a2b;
+  --color-line: #2a2740;
+  --color-line-strong: #393553;
+  --color-ink: #f3f1fa;
+  --color-ink-soft: #cbc7dd;
+  --color-muted: #9995b1;
+  --color-placeholder: #6f6b88;
+
+  --color-brand: #8468ff;
+  --color-brand-strong: #9780ff;
+  --color-brand-ink: #b6a2ff;
+  --color-brand-soft: #2a2445;
+  --color-brand-soft-strong: #3a3163;
+
+  --color-green: #24996b;
+  --color-green-strong: #2fae7c;
+  --color-green-soft: #16352a;
+  --color-green-ink: #6ed3a6;
+
+  --color-amber-soft: #3a2c17;
+  --color-amber-ink: #e8b877;
+
+  --color-rose-soft: #3a1f27;
+  --color-rose-ink: #f19aa4;
+
+  --color-mint-soft: #14342a;
+  --color-mint-ink: #6fd2a6;
+
+  --color-sky-soft: #17293f;
+  --color-sky-ink: #8ec0f2;
+
+  --color-slate-soft: #262338;
+  --color-slate-ink: #a7a3bf;
+
+  --color-avatar-violet-bg: #2f2750;
+  --color-avatar-violet-fg: #b6a2ff;
+  --color-avatar-mint-bg: #14342a;
+  --color-avatar-mint-fg: #6fd2a6;
+  --color-avatar-amber-bg: #3a2c17;
+  --color-avatar-amber-fg: #e8b877;
+  --color-avatar-rose-bg: #3a1f27;
+  --color-avatar-rose-fg: #f19aa4;
+  --color-avatar-sky-bg: #17293f;
+  --color-avatar-sky-fg: #8ec0f2;
+  --color-avatar-lime-bg: #23310f;
+  --color-avatar-lime-fg: #b4da7c;
+
+  --fq-shadow-card:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 8px 24px rgb(0 0 0 / 0.22);
 }
 
 html,
@@ -79,9 +218,7 @@ body {
     background: var(--color-surface);
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
-    box-shadow:
-      0 1px 2px rgb(23 22 48 / 0.04),
-      0 8px 24px rgb(23 22 48 / 0.04);
+    box-shadow: var(--fq-shadow-card);
   }
 
   .fq-card-flat {
@@ -149,7 +286,7 @@ body {
   /* Головна дія дитини — контурна, але у фірмовому кольорі й на всю ширину */
   .fq-btn-quest {
     width: 100%;
-    background: var(--color-surface);
+    background: transparent;
     color: var(--color-brand-ink);
     border: 1.5px solid var(--color-brand);
     padding: 0.8125rem 1.125rem;
@@ -202,7 +339,7 @@ body {
   }
 
   .fq-input::placeholder {
-    color: #a5a2b8;
+    color: var(--color-placeholder);
   }
 
   .fq-input:focus {

@@ -5,13 +5,14 @@ import { TASK_STATUS_LABEL, TASK_STATUS_TONE } from "@/lib/domain";
 
 /* ---------- Аватар ---------- */
 
+// Кольори живуть у CSS-змінних, тому автоматично міняються разом із темою.
 const AVATAR_STYLES: Record<string, { bg: string; fg: string }> = {
-  violet: { bg: "#ede7fe", fg: "#5231d6" },
-  mint: { bg: "#dcf1e6", fg: "#1f7a55" },
-  amber: { bg: "#fbe8cd", fg: "#97591f" },
-  rose: { bg: "#fbe0e5", fg: "#a83a5c" },
-  sky: { bg: "#dceafa", fg: "#245c94" },
-  lime: { bg: "#e6f2d4", fg: "#4d7220" },
+  violet: { bg: "var(--color-avatar-violet-bg)", fg: "var(--color-avatar-violet-fg)" },
+  mint: { bg: "var(--color-avatar-mint-bg)", fg: "var(--color-avatar-mint-fg)" },
+  amber: { bg: "var(--color-avatar-amber-bg)", fg: "var(--color-avatar-amber-fg)" },
+  rose: { bg: "var(--color-avatar-rose-bg)", fg: "var(--color-avatar-rose-fg)" },
+  sky: { bg: "var(--color-avatar-sky-bg)", fg: "var(--color-avatar-sky-fg)" },
+  lime: { bg: "var(--color-avatar-lime-bg)", fg: "var(--color-avatar-lime-fg)" },
 };
 
 const AVATAR_SIZES = {
@@ -93,11 +94,11 @@ export function StatCard({
   value: ReactNode;
 }) {
   const tones: Record<string, { bg: string; fg: string }> = {
-    lilac: { bg: "#efeafe", fg: "#5231d6" },
-    mint: { bg: "#e2f3ea", fg: "#1f7a55" },
-    amber: { bg: "#fceace", fg: "#97591f" },
-    sky: { bg: "#e2eefb", fg: "#245c94" },
-    rose: { bg: "#fde6e6", fg: "#a83a3a" },
+    lilac: { bg: "var(--color-brand-soft)", fg: "var(--color-brand-ink)" },
+    mint: { bg: "var(--color-mint-soft)", fg: "var(--color-mint-ink)" },
+    amber: { bg: "var(--color-amber-soft)", fg: "var(--color-amber-ink)" },
+    sky: { bg: "var(--color-sky-soft)", fg: "var(--color-sky-ink)" },
+    rose: { bg: "var(--color-rose-soft)", fg: "var(--color-rose-ink)" },
   };
   const t = tones[tone] ?? tones.lilac;
 

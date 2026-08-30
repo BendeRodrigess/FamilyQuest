@@ -2,6 +2,7 @@ import { requireChild } from "@/lib/auth";
 import { logoutAction } from "@/app/actions/auth";
 import { levelInfo, xpToAdvanceFrom } from "@/lib/levels";
 import { SectionCard } from "@/components/ui";
+import { ThemeChoice } from "@/components/theme/ThemeChoice";
 import { IconLogout } from "@/components/icons";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 
@@ -32,6 +33,10 @@ export default async function ChildSettingsPage() {
         <p className="mt-3 text-sm text-[var(--color-muted)]">
           Якщо забудеш пароль — попроси батьків, вони задають новий.
         </p>
+      </SectionCard>
+
+      <SectionCard title="Вигляд">
+        <ThemeChoice />
       </SectionCard>
 
       <SectionCard title="Як рахуються рівні">

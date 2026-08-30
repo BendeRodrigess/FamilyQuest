@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { logoutAction } from "@/app/actions/auth";
 import { Avatar } from "./ui";
+import { ThemeToggle } from "./theme/ThemeToggle";
 import {
   IconHome,
   IconTasks,
@@ -89,6 +90,7 @@ export function AppShell({
               <p className="text-xs leading-tight text-[var(--color-muted)]">{user.subtitle}</p>
             </div>
             <Avatar name={user.displayName} color={user.avatarColor} />
+            <ThemeToggle />
             <form action={logoutAction}>
               <button
                 type="submit"
