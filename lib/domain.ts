@@ -35,7 +35,12 @@ export const TASK_STATUS_TONE: Record<TaskStatus, "lilac" | "amber" | "green" | 
 export const LEDGER_KINDS = ["XP", "COIN"] as const;
 export type LedgerKind = (typeof LEDGER_KINDS)[number];
 
-export const LEDGER_REASONS = ["TASK_APPROVED", "PAYOUT"] as const;
+export const LEDGER_REASONS = [
+  "TASK_APPROVED",
+  "PAYOUT",
+  "REWARD_REDEEMED",
+  "REWARD_REFUNDED",
+] as const;
 export type LedgerReason = (typeof LEDGER_REASONS)[number];
 
 /** Кольори аватарів дітей — циклічно призначаються при додаванні. */
@@ -94,3 +99,29 @@ export function describeWeekdays(value: string): string {
     .map((day) => day.short)
     .join(", ");
 }
+
+/* ---------- Магазин нагород ---------- */
+
+export const REDEMPTION_STATUSES = ["PENDING", "FULFILLED", "DECLINED"] as const;
+export type RedemptionStatus = (typeof REDEMPTION_STATUSES)[number];
+
+export const REDEMPTION_STATUS_LABEL: Record<RedemptionStatus, string> = {
+  PENDING: "Очікує видачі",
+  FULFILLED: "Видано",
+  DECLINED: "Відхилено",
+};
+
+export const REDEMPTION_STATUS_TONE: Record<RedemptionStatus, "amber" | "green" | "rose"> = {
+  PENDING: "amber",
+  FULFILLED: "green",
+  DECLINED: "rose",
+};
+
+/** Набір емодзі для нагород — щоб вітрина не була стіною тексту. */
+export const REWARD_EMOJI = [
+  "🎁", "🎮", "🍦", "🎬", "🍕", "🛝", "🚲", "📚",
+  "🧸", "⚽", "🎨", "🎧", "🌙", "🍿", "🎂", "🏊",
+] as const;
+
+export const REWARD_COST_MIN = 1;
+export const REWARD_COST_MAX = 100000;

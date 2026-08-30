@@ -10,5 +10,8 @@ export default defineConfig({
   },
   datasource: {
     url: process.env["DATABASE_URL"],
+    // Тіньова база потрібна лише команді `prisma migrate dev` — вона перевіряє
+    // на ній міграцію перед застосуванням. `prisma dev` піднімає її на сусідньому порті.
+    shadowDatabaseUrl: process.env["SHADOW_DATABASE_URL"],
   },
 });

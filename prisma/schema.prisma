@@ -22,10 +22,12 @@ model Family {
   // Чи бачать діти прогрес одне одного (Хвиля 2).
   showSiblingProgress Boolean @default(true)
 
-  users     User[]
-  tasks     Task[]
-  templates TaskTemplate[]
-  ledger    LedgerEntry[]
+  users       User[]
+  tasks       Task[]
+  templates   TaskTemplate[]
+  ledger      LedgerEntry[]
+  rewards     Reward[]
+  redemptions RewardRedemption[]
 }
 
 // Шаблон повторюваного завдання. Сам по собі не є завданням:
@@ -93,8 +95,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   sessions      Session[]
-  assignedTasks Task[]         @relation("ChildTasks")
-  templates     TaskTemplate[] @relation("ChildTemplates")
+  assignedTasks Task[]             @relation("ChildTasks")
+  templates     TaskTemplate[]     @relation("ChildTemplates")
+  redemptions   RewardRedemption[] @relation("ChildRedemptions")
   ledger        LedgerEntry[]
 
   @@index([familyId])
@@ -176,4 +179,60 @@ model LedgerEntry {
 
   @@index([childId, kind])
   @@index([familyId, createdAt])
+}
+
+// Нагорода, яку батьки виставили в сімейному магазині.
+// Ціна — у коінах, тих самих, що дитина заробляє за завдання.
+model Reward {
+  id       String @id @default(cuid())
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  emoji       String @default("🎁")
+
+  costCoins Int
+
+  // Нагороду можна прибрати з вітрини, не видаляючи: історія обмінів лишається цілою.
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  redemptions RewardRedemption[]
+
+  @@index([familyId, isActive])
+}
+
+// Обмін коінів на нагороду.
+// Коіни списуються одразу при заявці — інакше дитина могла б «витратити»
+// той самий баланс на кілька нагород, поки батьки не бачать. При відмові
+// вони повертаються повністю.
+model RewardRedemption {
+  id       String @id @default(cuid())
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  childId  String
+  child    User   @relation("ChildRedemptions", fields: [childId], references: [id], onDelete: Cascade)
+
+  rewardId String?
+  reward   Reward? @relation(fields: [rewardId], references: [id], onDelete: SetNull)
+
+  // Знімок на момент обміну: зміна ціни чи назви не переписує минулі заявки.
+  titleSnapshot String
+  costSnapshot  Int
+  emojiSnapshot String @default("🎁")
+
+  // PENDING | FULFILLED | DECLINED
+  status String @default("PENDING")
+
+  childNote     String?
+  parentComment String?
+
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
+
+  @@index([familyId, status])
+  @@index([childId, status])
 }

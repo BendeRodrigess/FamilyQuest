@@ -14,9 +14,14 @@ export default async function ParentLayout({ children }: { children: ReactNode }
   await generateTodayTasks(parent.familyId);
   await syncTaskStatuses(parent.familyId);
 
-  const pendingCount = await prisma.task.count({
-    where: { familyId: parent.familyId, status: "PENDING_REVIEW" },
-  });
+  const [pendingTasks, pendingRedemptions] = await Promise.all([
+    prisma.task.count({
+      where: { familyId: parent.familyId, status: "PENDING_REVIEW" },
+    }),
+    prisma.rewardRedemption.count({
+      where: { familyId: parent.familyId, status: "PENDING" },
+    }),
+  ]);
 
   return (
     <AppShell
@@ -26,7 +31,7 @@ export default async function ParentLayout({ children }: { children: ReactNode }
         avatarColor: parent.avatarColor,
         role: "PARENT",
       }}
-      badge={pendingCount}
+      badges={{ tasks: pendingTasks, rewards: pendingRedemptions }}
     >
       {children}
     </AppShell>

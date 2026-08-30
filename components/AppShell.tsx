@@ -33,20 +33,22 @@ export type ShellUser = {
 
 const iconClass = "h-[1.15rem] w-[1.15rem]";
 
-function buildNav(role: "PARENT" | "CHILD", badge?: number): NavItem[] {
+export type Badges = { tasks?: number; rewards?: number };
+
+function buildNav(role: "PARENT" | "CHILD", badges: Badges): NavItem[] {
   if (role === "PARENT") {
     return [
       { href: "/parent", label: "Головна", shortLabel: "Головна", icon: <IconHome className={iconClass} /> },
-      { href: "/parent/tasks", label: "Завдання", shortLabel: "Завдання", icon: <IconTasks className={iconClass} />, badge },
+      { href: "/parent/tasks", label: "Завдання", shortLabel: "Завдання", icon: <IconTasks className={iconClass} />, badge: badges.tasks },
       { href: "/parent/family", label: "Моя сім'я", shortLabel: "Сім'я", icon: <IconFamily className={iconClass} /> },
-      { href: "/parent/rewards", label: "Винагороди", shortLabel: "Коіни", icon: <IconRewards className={iconClass} /> },
+      { href: "/parent/rewards", label: "Винагороди", shortLabel: "Коіни", icon: <IconRewards className={iconClass} />, badge: badges.rewards },
       { href: "/parent/settings", label: "Налаштування", shortLabel: "Ще", icon: <IconSettings className={iconClass} /> },
     ];
   }
 
   return [
     { href: "/child", label: "Головна", shortLabel: "Головна", icon: <IconHome className={iconClass} /> },
-    { href: "/child/tasks", label: "Мої квести", shortLabel: "Квести", icon: <IconTasks className={iconClass} />, badge },
+    { href: "/child/tasks", label: "Мої квести", shortLabel: "Квести", icon: <IconTasks className={iconClass} />, badge: badges.tasks },
     { href: "/child/family", label: "Моя сім'я", shortLabel: "Сім'я", icon: <IconFamily className={iconClass} /> },
     { href: "/child/rewards", label: "Винагороди", shortLabel: "Коіни", icon: <IconRewards className={iconClass} /> },
     { href: "/child/settings", label: "Налаштування", shortLabel: "Ще", icon: <IconSettings className={iconClass} /> },
@@ -60,15 +62,15 @@ function isActive(pathname: string, href: string, rootHref: string) {
 
 export function AppShell({
   user,
-  badge,
+  badges = {},
   children,
 }: {
   user: ShellUser;
-  badge?: number;
+  badges?: Badges;
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const nav = buildNav(user.role, badge);
+  const nav = buildNav(user.role, badges);
   const rootHref = user.role === "PARENT" ? "/parent" : "/child";
 
   return (

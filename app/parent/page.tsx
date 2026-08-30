@@ -7,6 +7,7 @@ import { formatSubmittedLabel } from "@/lib/format";
 import { IconClipboard, IconClock, IconCoin, IconInbox, IconPlus, IconFamily } from "@/components/icons";
 import { Avatar, EmptyState, ProgressBar, SectionCard, StatCard } from "@/components/ui";
 import { ReviewCard, type ReviewItem } from "@/components/parent/ReviewCard";
+import { RedemptionCard, type RedemptionItem } from "@/components/parent/RedemptionCard";
 
 export default async function ParentHomePage() {
   const parent = await requireParent();
@@ -14,7 +15,7 @@ export default async function ParentHomePage() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [children, pendingTasks, activeCount, monthCoins] = await Promise.all([
+  const [children, pendingTasks, activeCount, monthCoins, pendingRedemptions] = await Promise.all([
     prisma.user.findMany({
       where: { familyId, role: "CHILD" },
       orderBy: { createdAt: "asc" },
@@ -34,6 +35,11 @@ export default async function ParentHomePage() {
         createdAt: { gte: monthStart },
       },
     }),
+    prisma.rewardRedemption.findMany({
+      where: { familyId, status: "PENDING" },
+      include: { child: true },
+      orderBy: { createdAt: "asc" },
+    }),
   ]);
 
   const reviewItems: ReviewItem[] = pendingTasks.map((task) => ({
@@ -45,6 +51,17 @@ export default async function ParentHomePage() {
     childComment: task.childComment,
     xp: task.xpReward,
     coins: task.coinReward,
+  }));
+
+  const redemptionItems: RedemptionItem[] = pendingRedemptions.map((item) => ({
+    id: item.id,
+    title: item.titleSnapshot,
+    emoji: item.emojiSnapshot,
+    cost: item.costSnapshot,
+    childName: item.child.displayName,
+    childColor: item.child.avatarColor,
+    requestedLabel: formatSubmittedLabel(item.createdAt, now),
+    childNote: item.childNote,
   }));
 
   const hasChildren = children.length > 0;
@@ -107,31 +124,53 @@ export default async function ParentHomePage() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-            <SectionCard
-              title="Очікують перевірки"
-              action={
-                <Link
-                  href="/parent/tasks"
-                  className="text-sm font-bold text-[var(--color-brand-ink)]"
+            <div className="flex flex-col gap-5">
+              <SectionCard
+                title="Очікують перевірки"
+                action={
+                  <Link
+                    href="/parent/tasks"
+                    className="text-sm font-bold text-[var(--color-brand-ink)]"
+                  >
+                    Усі завдання
+                  </Link>
+                }
+              >
+                {reviewItems.length === 0 ? (
+                  <EmptyState
+                    icon={<IconInbox className="h-7 w-7" />}
+                    title="Немає завдань на перевірці"
+                    hint="Щойно дитина позначить квест виконаним, він з'явиться тут."
+                  />
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {reviewItems.map((item) => (
+                      <ReviewCard key={item.taskId} item={item} />
+                    ))}
+                  </div>
+                )}
+              </SectionCard>
+
+              {redemptionItems.length > 0 && (
+                <SectionCard
+                  title="Замовлені нагороди"
+                  action={
+                    <Link
+                      href="/parent/rewards"
+                      className="text-sm font-bold text-[var(--color-brand-ink)]"
+                    >
+                      Магазин
+                    </Link>
+                  }
                 >
-                  Усі завдання
-                </Link>
-              }
-            >
-              {reviewItems.length === 0 ? (
-                <EmptyState
-                  icon={<IconInbox className="h-7 w-7" />}
-                  title="Немає завдань на перевірці"
-                  hint="Щойно дитина позначить квест виконаним, він з'явиться тут."
-                />
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {reviewItems.map((item) => (
-                    <ReviewCard key={item.taskId} item={item} />
-                  ))}
-                </div>
+                  <div className="flex flex-col gap-3">
+                    {redemptionItems.map((item) => (
+                      <RedemptionCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </SectionCard>
               )}
-            </SectionCard>
+            </div>
 
             <SectionCard
               title="Діти"

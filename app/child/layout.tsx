@@ -27,7 +27,7 @@ export default async function ChildLayout({ children }: { children: ReactNode })
         avatarColor: child.avatarColor,
         role: "CHILD",
       }}
-      badge={activeCount}
+      badges={{ tasks: activeCount }}
     >
       {children}
     </AppShell>
