@@ -122,3 +122,41 @@ XP і коіни нараховуються **лише** в момент під�
 - Push-сповіщення (особливо важливі для таймера зникнення)
 - Реальні платежі
 - Окремі акаунти для мами й тата
+
+## Розгортання
+
+Продакшен: **https://familyquest.site** — VPS Ubuntu, Node 22, PostgreSQL 18, Nginx.
+
+| Що | Де |
+| --- | --- |
+| Код | `/var/www/familyquest` |
+| Рядок підключення й змінні | `/etc/familyquest/env` (поза каталогом проєкту, `640 root:familyquest`) |
+| Служба | `familyquest.service`, слухає `127.0.0.1:3000` |
+| Nginx | `/etc/nginx/sites-available/familyquest` — зворотний проксі |
+| Сертифікат | Let's Encrypt, автопоновлення через `certbot.timer` |
+
+Застосунок працює під окремим системним користувачем `familyquest` без права входу.
+Назовні відкриті тільки 80, 443 і 22 — база й сам застосунок доступні лише з localhost.
+
+### Оновити продакшен
+
+```bash
+cd /var/www/familyquest && git pull && npm ci --include=dev && npx prisma migrate deploy && npm run build && systemctl restart familyquest
+```
+
+`--include=dev` обов'язковий: у файлі оточення стоїть `NODE_ENV=production`, і без цього
+прапорця npm мовчки пропустить залежності, потрібні для збірки.
+
+### Корисне
+
+```bash
+journalctl -u familyquest -f
+```
+
+```bash
+systemctl status familyquest nginx postgresql
+```
+
+```bash
+nginx -t && systemctl reload nginx
+```
