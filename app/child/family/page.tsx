@@ -4,6 +4,8 @@ import { levelInfo } from "@/lib/levels";
 import { currentStreak, streakLabel } from "@/lib/streak";
 import { IconFamily, IconFlame } from "@/components/icons";
 import { Avatar, EmptyState, Pill, ProgressBar, SectionCard } from "@/components/ui";
+import { CompanionSprite } from "@/components/companion/CompanionSprite";
+import { moodOf } from "@/lib/companion/state";
 
 export default async function ChildFamilyPage() {
   const child = await requireChild();
@@ -33,6 +35,7 @@ export default async function ChildFamilyPage() {
     where: { familyId: child.familyId, role: "CHILD" },
     orderBy: { createdAt: "asc" },
     include: {
+      companion: true,
       _count: { select: { assignedTasks: { where: { status: "DONE" } } } },
     },
   });
@@ -47,6 +50,18 @@ export default async function ChildFamilyPage() {
       xp: member.xp,
       done: member._count.assignedTasks,
       streak: await currentStreak(member.id, now),
+      companion: member.companion
+        ? {
+            species: member.companion.species,
+            name: member.companion.name,
+            asleep:
+              moodOf({
+                fullness: member.companion.fullness,
+                mood: member.companion.mood,
+                energy: member.companion.energy,
+              }) === "sleepy",
+          }
+        : null,
     })),
   );
 
@@ -71,7 +86,21 @@ export default async function ChildFamilyPage() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <Avatar name={row.name} color={row.color} size="lg" />
+                {row.companion ? (
+                  <span
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface)]"
+                    title={row.companion.name}
+                  >
+                    <CompanionSprite
+                      species={row.companion.species}
+                      sleeping={row.companion.asleep}
+                      name={row.companion.name}
+                      className="w-11"
+                    />
+                  </span>
+                ) : (
+                  <Avatar name={row.name} color={row.color} size="lg" />
+                )}
 
                 <div className="min-w-0 flex-1">
                   <div className="mb-1.5 flex flex-wrap items-center gap-2">

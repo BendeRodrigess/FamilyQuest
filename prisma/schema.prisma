@@ -91,6 +91,11 @@ model User {
   coinsBalance     Int @default(0)
   coinsEarnedTotal Int @default(0)
 
+  // Зірочки догляду за компаньйоном: по одній за кожне підтверджене завдання,
+  // одна витрачається на одну дію догляду. У журнал не пишуться — це дрібний
+  // ресурс ігрової петлі, а не облікова сутність.
+  careStars Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -98,6 +103,8 @@ model User {
   assignedTasks Task[]             @relation("ChildTasks")
   templates     TaskTemplate[]     @relation("ChildTemplates")
   redemptions   RewardRedemption[] @relation("ChildRedemptions")
+  companion     Companion?         @relation("ChildCompanion")
+  room          RoomPlacement[]    @relation("ChildRoom")
   ledger        LedgerEntry[]
 
   @@index([familyId])
@@ -235,4 +242,43 @@ model RewardRedemption {
 
   @@index([familyId, status])
   @@index([childId, status])
+}
+
+// Компаньйон дитини — один на кожну. Шкали спадають із часом, але піднімаються
+// лише зірочками догляду, які дає підтверджене завдання. Тобто улюбленець живе
+// з виконаних обов'язків, а не з того, як часто відкривають застосунок.
+model Companion {
+  id      String @id @default(cuid())
+  childId String @unique
+  child   User   @relation("ChildCompanion", fields: [childId], references: [id], onDelete: Cascade)
+
+  species String // ключ із каталогу: "fox" | "frog" | "cat"
+  name    String
+
+  // 0..100. Ніколи не падають нижче порогу з lib/companion/state.ts:
+  // компаньйон не хворіє й не помирає — найгірший стан це «дрімає».
+  fullness Int @default(80)
+  mood     Int @default(80)
+  energy   Int @default(80)
+
+  // Від цієї позначки рахується спадання при наступному відкритті.
+  lastTickAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Що дитина поставила в кожен слот кімнати. Предмети відкриваються рівнем,
+// а рівень береться з XP — так XP нарешті щось відмикає, лишаючись невитратним.
+model RoomPlacement {
+  id      String @id @default(cuid())
+  childId String
+  child   User   @relation("ChildRoom", fields: [childId], references: [id], onDelete: Cascade)
+
+  slot   String // "wallpaper" | "floor" | "bed" | "rug" | "plant" | "toy" | "picture" | "shelf"
+  itemId String
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([childId, slot])
 }

@@ -386,3 +386,36 @@ body {
 .fq-safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ============================================================
+   Компаньйон: піксельна графіка й проста ідл-анімація.
+   Спрайти навмисно масштабуються без згладжування — інакше
+   піксель-арт перетворюється на розмиту кашу.
+   ============================================================ */
+
+.fq-pixel {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+@keyframes fq-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6%); }
+}
+
+.fq-bob {
+  animation: fq-bob 2.4s ease-in-out infinite;
+}
+
+/* Сонний компаньйон дихає повільніше й трохи приглушений */
+.fq-bob-slow {
+  animation: fq-bob 4.5s ease-in-out infinite;
+  filter: saturate(0.65);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-bob,
+  .fq-bob-slow {
+    animation: none;
+  }
+}

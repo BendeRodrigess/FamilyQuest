@@ -10,6 +10,9 @@ import type { TaskStatus } from "@/lib/domain";
 import { IconCoin, IconFlame, IconSparkles, IconZap } from "@/components/icons";
 import { EmptyState, ProgressBar, SectionCard, StatCard } from "@/components/ui";
 import { QuestCard, type Quest } from "@/components/child/QuestCard";
+import { CompanionSprite } from "@/components/companion/CompanionSprite";
+import { getCompanion } from "@/lib/companion/service";
+import { moodOf } from "@/lib/companion/state";
 
 function questsPhrase(count: number): string {
   if (count === 0) return "Активних квестів немає — можна відпочити.";
@@ -22,7 +25,7 @@ export default async function ChildHomePage() {
   const child = await requireChild();
   const now = new Date();
 
-  const [openTasks, pendingTasks, streak] = await Promise.all([
+  const [openTasks, pendingTasks, streak, companion] = await Promise.all([
     prisma.task.findMany({
       where: { childId: child.id, status: { in: ["ACTIVE", "REJECTED", "OVERDUE"] } },
       orderBy: { dueAt: "asc" },
@@ -32,9 +35,14 @@ export default async function ChildHomePage() {
       orderBy: { submittedAt: "desc" },
     }),
     currentStreak(child.id, now),
+    getCompanion(child.id),
   ]);
 
   const info = levelInfo(child.xp);
+  const companionAsleep = companion
+    ? moodOf({ fullness: companion.fullness, mood: companion.mood, energy: companion.energy }) ===
+      "sleepy"
+    : false;
   const grace = child.family.overdueGraceMinutes ?? DEFAULT_GRACE_MINUTES;
 
   const toQuest = (task: (typeof openTasks)[number]): Quest => ({
@@ -82,12 +90,25 @@ export default async function ChildHomePage() {
             </p>
           </div>
 
-          <div className="hidden h-[104px] w-[104px] shrink-0 flex-col items-center justify-center rounded-full bg-[var(--color-surface)] sm:flex">
-            <span className="text-xs font-semibold text-[var(--color-muted)]">рівень</span>
-            <span className="text-[1.75rem] leading-none font-extrabold text-[var(--color-brand-ink)]">
-              {info.level}
-            </span>
-          </div>
+          {/* Те саме коло, яке з Хвилі 1 чекало на персонажа */}
+          <Link
+            href="/child/companion"
+            className="hidden h-[104px] w-[104px] shrink-0 items-center justify-center rounded-full bg-[var(--color-surface)] transition-transform hover:scale-105 sm:flex"
+            title={companion ? companion.name : "Обери улюбленця"}
+          >
+            {companion ? (
+              <CompanionSprite
+                species={companion.species}
+                sleeping={companionAsleep}
+                name={companion.name}
+                className="w-[68px]"
+              />
+            ) : (
+              <span className="px-2 text-center text-xs font-bold text-[var(--color-brand-ink)]">
+                Обери улюбленця
+              </span>
+            )}
+          </Link>
         </div>
       </section>
 

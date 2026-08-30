@@ -14,6 +14,7 @@ import {
   IconRewards,
   IconSettings,
   IconLogout,
+  IconPaw,
 } from "./icons";
 
 type NavItem = {
@@ -49,6 +50,7 @@ function buildNav(role: "PARENT" | "CHILD", badges: Badges): NavItem[] {
   return [
     { href: "/child", label: "Головна", shortLabel: "Головна", icon: <IconHome className={iconClass} /> },
     { href: "/child/tasks", label: "Мої квести", shortLabel: "Квести", icon: <IconTasks className={iconClass} />, badge: badges.tasks },
+    { href: "/child/companion", label: "Улюбленець", shortLabel: "Друг", icon: <IconPaw className={iconClass} /> },
     { href: "/child/family", label: "Моя сім'я", shortLabel: "Сім'я", icon: <IconFamily className={iconClass} /> },
     { href: "/child/rewards", label: "Винагороди", shortLabel: "Коіни", icon: <IconRewards className={iconClass} /> },
     { href: "/child/settings", label: "Налаштування", shortLabel: "Ще", icon: <IconSettings className={iconClass} /> },

@@ -211,3 +211,13 @@ export const IconFlame = (p: IconProps) => (
     <path d="M12 2.5c.6 3.2-1.2 4.6-2.6 6C7.8 10 6.5 11.5 6.5 14a5.5 5.5 0 0 0 11 0c0-2.3-1.1-3.9-2.4-5.3-.4 1-1.1 1.7-2 2 .6-2.9-.3-6.3-1.6-8.2Z" />
   </Svg>
 );
+
+export const IconPaw = (p: IconProps) => (
+  <Svg {...p}>
+    <ellipse cx="12" cy="15.5" rx="4.2" ry="3.6" />
+    <ellipse cx="6.4" cy="10.4" rx="2.1" ry="2.5" />
+    <ellipse cx="17.6" cy="10.4" rx="2.1" ry="2.5" />
+    <ellipse cx="9.6" cy="6.2" rx="1.9" ry="2.3" />
+    <ellipse cx="14.4" cy="6.2" rx="1.9" ry="2.3" />
+  </Svg>
+);
