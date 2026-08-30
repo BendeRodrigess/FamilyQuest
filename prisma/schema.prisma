@@ -1,0 +1,125 @@
+// FamilyQuest — схема даних
+// Хвиля 1: сім'я, акаунти, разові завдання, XP, коіни, журнал нарахувань.
+// Статуси та причини нарахувань зберігаються рядками, а не enum-ами:
+// SQLite не підтримує enum, і так перехід на PostgreSQL не потребує змін схеми.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Family {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  // Тривалість таймера зникнення простроченого завдання (Хвиля 2).
+  overdueGraceMinutes Int @default(60)
+  // Чи бачать діти прогрес одне одного (Хвиля 2).
+  showSiblingProgress Boolean @default(true)
+
+  users  User[]
+  tasks  Task[]
+  ledger LedgerEntry[]
+}
+
+// Один акаунт на батьків (спільний для тата, мами, бабусі) + окремі акаунти дітей.
+model User {
+  id       String @id @default(cuid())
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  role        String // "PARENT" | "CHILD"
+  displayName String
+  avatarColor String @default("violet")
+
+  email    String? @unique // тільки батьки
+  username String? @unique // тільки діти
+
+  passwordHash String
+
+  // Лічильники дитини. Джерело істини — LedgerEntry; це кеш для швидкого читання.
+  xp               Int @default(0)
+  coinsBalance     Int @default(0)
+  coinsEarnedTotal Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions      Session[]
+  assignedTasks Task[]        @relation("ChildTasks")
+  ledger        LedgerEntry[]
+
+  @@index([familyId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Task {
+  id       String @id @default(cuid())
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  childId  String
+  child    User   @relation("ChildTasks", fields: [childId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  dueAt       DateTime
+
+  xpReward   Int
+  coinReward Int @default(0)
+
+  // ACTIVE | PENDING_REVIEW | DONE | REJECTED | OVERDUE
+  status String @default("ACTIVE")
+
+  childComment  String? // коментар дитини при поданні на перевірку
+  parentComment String? // коментар батьків при відхиленні
+
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ledger LedgerEntry[]
+
+  @@index([familyId])
+  @@index([childId, status])
+}
+
+// Журнал усіх нарахувань і списань. Зберігаємо події, а не лише підсумкові числа,
+// щоб пізніше побудувати історію, досягнення, серії виконань і звіти.
+model LedgerEntry {
+  id       String @id @default(cuid())
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  childId  String
+  child    User   @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  kind   String // "XP" | "COIN"
+  amount Int    // додатне — нарахування, від'ємне — виплата
+  reason String // "TASK_APPROVED" | "PAYOUT"
+
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  note String?
+
+  createdAt DateTime @default(now())
+
+  @@index([childId, kind])
+  @@index([familyId, createdAt])
+}

@@ -1,0 +1,6 @@
+# Нормалізуємо переноси рядків: у репозиторії завжди LF,
+# щоб проєкт однаково виглядав на Windows, macOS і Linux.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary

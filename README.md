@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FamilyQuest
 
-## Getting Started
+Сімейний застосунок, який перетворює домашні обов'язки на квести з XP і винагородами.
+Батьки створюють завдання, дитина виконує, батьки підтверджують — і тільки після
+підтвердження нараховуються XP та коіни.
 
-First, run the development server:
+## Запуск
 
 ```bash
+npm install
+npm run db:migrate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Застосунок буде на http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Перший крок — створити сім'ю на `/register`, потім додати дитину на `/parent/family`.
+Дитина заходить на `/login` у вкладці «Я дитина» за логіном і паролем, які задали батьки.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Стек
 
-## Learn More
+| Що | Чим |
+| --- | --- |
+| Фреймворк | Next.js 16 (App Router, Server Actions) |
+| Мова | TypeScript |
+| Стилі | Tailwind CSS 4 + власна система токенів у `app/globals.css` |
+| База | SQLite через Prisma 7 + драйвер-адаптер libsql |
+| Валідація | Zod |
+| Авторизація | власні сесії в базі, паролі — scrypt із `node:crypto` |
 
-To learn more about Next.js, take a look at the following resources:
+SQLite обрано для розробки: не потребує сервера бази й компілятора. Статуси та причини
+нарахувань зберігаються рядками, а не enum-ами, тому перехід на PostgreSQL — це заміна
+`provider` у схемі й адаптера в `lib/prisma.ts`, без переписування коду.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Структура
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/
+  actions/          серверні дії (створення завдань, перевірка, виплати, авторизація)
+  parent/           батьківські екрани
+  child/            дитячі екрани
+  login, register   вхід і створення сім'ї
+components/         UI: оболонка, картки, форми, іконки
+lib/
+  auth.ts           паролі, сесії, охорона маршрутів
+  tasks.ts          життєвий цикл завдання, нарахування
+  rewards.ts        виплати коінів
+  levels.ts         формула рівнів
+  format.ts         дати, відмінювання, кличний відмінок
+prisma/schema.prisma
+scripts/generate-icons.mjs   генерує PWA-іконки без зовнішніх залежностей
+```
 
-## Deploy on Vercel
+## Правила гри
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Статуси завдання**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+Активне ──[дитина: «Виконано»]──> Очікує перевірки
+   │                                    │
+   │                     ┌──────────────┴──────────────┐
+   │              [підтвердити]                 [відхилити + коментар]
+   │                     │                              │
+   │                Виконане                       Відхилене
+   │             (+XP, +коіни)                          │
+   │                                      [дитина виконує повторно]
+   │<──────────────────────────────────────────────────┘
+   │
+   └──[минув термін]──> Прострочене
+```
+
+XP і коіни нараховуються **лише** в момент підтвердження батьками — ніде більше.
+Підтвердження остаточне.
+
+**Рівні.** Щоб перейти з рівня N на N+1, треба `100 + (N-1) × 50` XP.
+Тобто 100, 150, 200, 250… XP ніколи не витрачається.
+
+**Коіни.** Внутрішня валюта. `coinsBalance` — доступно зараз, `coinsEarnedTotal` —
+зароблено за весь час (ніколи не зменшується). Виплата зменшує лише баланс.
+
+Кожне нарахування й списання записується окремим рядком у `LedgerEntry` — це основа
+для майбутньої історії, досягнень і серій виконань.
+
+## Що вже є (Хвиля 1)
+
+- Спільний батьківський акаунт (email + пароль) і окремі акаунти дітей (логін + пароль)
+- Батьки бачать логін дитини і можуть задати новий пароль; поточний ніде не зберігається
+  у відкритому вигляді
+- Разові завдання: назва, опис, дитина, дедлайн з часом, XP, коіни; редагування й видалення
+- Повний цикл: «Виконано» з коментарем дитини → перевірка → підтвердження або відхилення
+  з коментарем → повторне виконання
+- П'ять статусів, автоматичний перехід у «прострочене»
+- XP, прогресивні рівні, коіни, виплати з історією
+- Панелі батьків і дитини, PWA, українська мова, mobile-first
+
+## Що заплановано (Хвиля 2)
+
+- Повторювані завдання (шаблони: щодня / обрані дні тижня) + прапорець «зараховувати
+  без перевірки»
+- Таймер зникнення простроченого завдання і статус «Втрачене»
+  (поля `overdueGraceMinutes` у схемі вже є)
+- Сімейний екран із прогресом усіх дітей + перемикач видимості
+  (поле `showSiblingProgress` у схемі вже є)
+- Серія виконаних завдань (streak)
