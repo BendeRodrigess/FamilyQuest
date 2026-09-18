@@ -5,31 +5,33 @@
 //
 // Замінити тимчасовий малюнок на справжній = покласти PNG із тим самим іменем
 // у public/sprites. Додати новий предмет = рядок тут плюс запис у catalog.ts.
-// Змінити розмір або кількість кадрів анімації = правка одного поля.
+//
+// Розміри вказані у пікселях самого файлу: вони задають пропорції, щоб
+// верстка не «стрибала» до завантаження картинки.
 
 export type Sprite = {
   src: string;
-  /** Власні пропорції спрайта — щоб верстка не «стрибала» до завантаження. */
   width: number;
   height: number;
   /** Кадрів у стрічці. 1 — статична картинка. Поки всі тимчасові статичні. */
   frames?: number;
 };
 
-const COMPANION_SIZE = { width: 72, height: 64 };
+const IDLE = { width: 108, height: 108 };
+const SLEEP = { width: 120, height: 66 };
 
 export const COMPANION_SPRITES: Record<string, { idle: Sprite; sleep: Sprite }> = {
   fox: {
-    idle: { src: "/sprites/companion/fox-idle.png", ...COMPANION_SIZE },
-    sleep: { src: "/sprites/companion/fox-sleep.png", ...COMPANION_SIZE },
+    idle: { src: "/sprites/companion/fox-idle.png", ...IDLE },
+    sleep: { src: "/sprites/companion/fox-sleep.png", ...SLEEP },
   },
   frog: {
-    idle: { src: "/sprites/companion/frog-idle.png", ...COMPANION_SIZE },
-    sleep: { src: "/sprites/companion/frog-sleep.png", ...COMPANION_SIZE },
+    idle: { src: "/sprites/companion/frog-idle.png", ...IDLE },
+    sleep: { src: "/sprites/companion/frog-sleep.png", ...SLEEP },
   },
   cat: {
-    idle: { src: "/sprites/companion/cat-idle.png", ...COMPANION_SIZE },
-    sleep: { src: "/sprites/companion/cat-sleep.png", ...COMPANION_SIZE },
+    idle: { src: "/sprites/companion/cat-idle.png", ...IDLE },
+    sleep: { src: "/sprites/companion/cat-sleep.png", ...SLEEP },
   },
 };
 
@@ -38,31 +40,43 @@ export function companionSprite(species: string, sleeping: boolean): Sprite {
   return sleeping ? set.sleep : set.idle;
 }
 
+export const ZZZ_SPRITE: Sprite = { src: "/sprites/companion/zzz.png", width: 54, height: 48 };
+
+/** Ковдра, якою накривається сплячий компаньйон. Малюється поверх нього. */
+export const BLANKET_SPRITE: Sprite = {
+  src: "/sprites/room/blanket.png",
+  width: 78,
+  height: 36,
+};
+
 /**
  * Предмети кімнати. Порожні слоти («…-none») спрайта не мають —
  * компонент просто нічого не малює.
  */
 export const ROOM_SPRITES: Record<string, Sprite> = {
-  "bed-simple": { src: "/sprites/room/bed-simple.png", width: 112, height: 56 },
-  "bed-wooden": { src: "/sprites/room/bed-wooden.png", width: 112, height: 72 },
-  "bed-canopy": { src: "/sprites/room/bed-canopy.png", width: 112, height: 96 },
+  "bed-simple": { src: "/sprites/room/bed-simple.png", width: 120, height: 66 },
+  "bed-wooden": { src: "/sprites/room/bed-wooden.png", width: 138, height: 102 },
+  "bed-canopy": { src: "/sprites/room/bed-canopy.png", width: 138, height: 132 },
 
-  "rug-star": { src: "/sprites/room/rug-star.png", width: 96, height: 40 },
-  "rug-round": { src: "/sprites/room/rug-round.png", width: 80, height: 48 },
+  "rug-star": { src: "/sprites/room/rug-star.png", width: 120, height: 48 },
+  "rug-round": { src: "/sprites/room/rug-round.png", width: 90, height: 54 },
 
-  "plant-pot": { src: "/sprites/room/plant-pot.png", width: 56, height: 80 },
-  "plant-hanging": { src: "/sprites/room/plant-hanging.png", width: 56, height: 72 },
+  "plant-pot": { src: "/sprites/room/plant-pot.png", width: 72, height: 96 },
+  "plant-hanging": { src: "/sprites/room/plant-hanging.png", width: 72, height: 84 },
 
-  "toy-ball": { src: "/sprites/room/toy-ball.png", width: 48, height: 48 },
-  "toy-blocks": { src: "/sprites/room/toy-blocks.png", width: 64, height: 48 },
+  "toy-ball": { src: "/sprites/room/toy-ball.png", width: 60, height: 60 },
+  "toy-blocks": { src: "/sprites/room/toy-blocks.png", width: 78, height: 66 },
 
-  "picture-mountains": { src: "/sprites/room/picture-mountains.png", width: 56, height: 48 },
-  "picture-stars": { src: "/sprites/room/picture-stars.png", width: 56, height: 48 },
+  "picture-mountains": { src: "/sprites/room/picture-mountains.png", width: 66, height: 60 },
+  "picture-stars": { src: "/sprites/room/picture-stars.png", width: 66, height: 60 },
 
-  "shelf-books": { src: "/sprites/room/shelf-books.png", width: 80, height: 48 },
-  "shelf-friend": { src: "/sprites/room/shelf-friend.png", width: 80, height: 56 },
+  "shelf-books": { src: "/sprites/room/shelf-books.png", width: 102, height: 66 },
+  "shelf-friend": { src: "/sprites/room/shelf-friend.png", width: 102, height: 66 },
 
-  "food-bowl": { src: "/sprites/room/food-bowl.png", width: 56, height: 36 },
+  "food-bowl": { src: "/sprites/room/food-bowl.png", width: 78, height: 54 },
+
+  // Вікно стоїть у кімнаті завжди, тому в каталозі предметів його немає.
+  window: { src: "/sprites/room/window.png", width: 102, height: 96 },
 };
 
 export function roomSprite(itemId: string): Sprite | null {
@@ -70,17 +84,49 @@ export function roomSprite(itemId: string): Sprite | null {
 }
 
 /**
- * Шпалери й підлога — це кольори, а не картинки: суцільна заливка масштабується
- * без втрат і важить нуль. Спрайт знадобиться лише коли з'явиться візерунок.
+ * Поверхні — безшовні плитки, які повторюються по стіні й підлозі.
+ * `tile` — розмір самої плитки в пікселях; компонент множить його на ціле
+ * число, щоб пікселі лишалися рівними.
+ *
+ * `fallback` показується, поки картинка не завантажилась, і на випадок,
+ * якщо її взагалі немає.
  */
-export const SURFACE_COLORS: Record<string, string> = {
-  "wallpaper-mint": "#bfe8d8",
-  "wallpaper-lilac": "#ddd0f5",
-  "wallpaper-sky": "#cfe4f7",
-  "floor-wood": "#b98a5c",
-  "floor-tile": "#d9d3e6",
+export type Surface = { src: string; tile: [number, number]; fallback: string };
+
+export const SURFACES: Record<string, Surface> = {
+  "wallpaper-mint": {
+    src: "/sprites/surface/wallpaper-mint.png",
+    tile: [32, 32],
+    fallback: "#bfe8d8",
+  },
+  "wallpaper-lilac": {
+    src: "/sprites/surface/wallpaper-lilac.png",
+    tile: [32, 32],
+    fallback: "#ddd0f5",
+  },
+  "wallpaper-sky": {
+    src: "/sprites/surface/wallpaper-sky.png",
+    tile: [32, 32],
+    fallback: "#cfe4f7",
+  },
+  "floor-wood": {
+    src: "/sprites/surface/floor-wood.png",
+    tile: [48, 26],
+    fallback: "#b08054",
+  },
+  "floor-tile": {
+    src: "/sprites/surface/floor-tile.png",
+    tile: [24, 24],
+    fallback: "#d6d0e6",
+  },
 };
 
-export function surfaceColor(itemId: string, fallback: string): string {
-  return SURFACE_COLORS[itemId] ?? fallback;
+export const BASEBOARD: Surface = {
+  src: "/sprites/surface/baseboard.png",
+  tile: [16, 6],
+  fallback: "#e2deee",
+};
+
+export function surface(itemId: string, fallbackKey: string): Surface {
+  return SURFACES[itemId] ?? SURFACES[fallbackKey];
 }

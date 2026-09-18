@@ -93,7 +93,7 @@ export default async function ChildFamilyPage() {
                   >
                     <CompanionSprite
                       species={row.companion.species}
-                      sleeping={row.companion.asleep}
+                      muted={row.companion.asleep}
                       name={row.companion.name}
                       className="w-11"
                     />

@@ -99,7 +99,7 @@ export default async function ChildHomePage() {
             {companion ? (
               <CompanionSprite
                 species={companion.species}
-                sleeping={companionAsleep}
+                muted={companionAsleep}
                 name={companion.name}
                 className="w-[68px]"
               />
