@@ -10,8 +10,9 @@ export type RoomView = Record<RoomSlot, string>;
  * слоти дають те саме.
  *
  * Позиції у відсотках, тому сцена однаково виглядає на будь-якій ширині.
- * Компаньйон стоїть по центру й займає приблизно 38–62% ширини —
- * предмети розставлені так, щоб його не перекривати.
+ * Компаньйон стоїть по центру й займає приблизно 38–62% ширини. Решта розставлена
+ * так, щоб нічого не накладалося: рослина 3–16%, іграшка 18–28%, миска 30–40%,
+ * килим 40–66%, ліжко 65–97%.
  */
 const POSITIONS: Record<string, string> = {
   picture: "left-[16%] top-[10%] w-[13%]",
@@ -19,7 +20,7 @@ const POSITIONS: Record<string, string> = {
   plant: "left-[3%] bottom-[6%] w-[13%]",
   bed: "right-[3%] bottom-[10%] w-[32%]",
   rug: "left-[40%] bottom-[3%] w-[26%]",
-  toy: "left-[23%] bottom-[6%] w-[11%]",
+  toy: "left-[18%] bottom-[6%] w-[10%]",
 };
 
 function Item({ slot, itemId }: { slot: string; itemId: string }) {
@@ -81,7 +82,7 @@ export function CompanionRoom({
           src={bowl.src}
           alt=""
           aria-hidden="true"
-          className="fq-pixel absolute bottom-[5%] left-[22%] w-[13%]"
+          className="fq-pixel absolute bottom-[3%] left-[30%] w-[10%]"
           draggable={false}
         />
       )}
