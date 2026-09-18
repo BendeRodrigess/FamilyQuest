@@ -5,9 +5,7 @@ import { speciesById, upcomingUnlocks } from "@/lib/companion/catalog";
 import { MOOD_LABEL, MOOD_LINE, moodOf, type Needs } from "@/lib/companion/state";
 import { Pill, SectionCard } from "@/components/ui";
 import { AdoptCompanion } from "@/components/companion/AdoptCompanion";
-import { CompanionRoom } from "@/components/companion/CompanionRoom";
-import { NeedBars } from "@/components/companion/NeedBars";
-import { CareButtons } from "@/components/companion/CareButtons";
+import { CompanionStage } from "@/components/companion/CompanionStage";
 import { RoomEditor } from "@/components/companion/RoomEditor";
 
 export default async function ChildCompanionPage() {
@@ -60,25 +58,15 @@ export default async function ChildCompanionPage() {
         <Pill tone="amber">⭐ {child.careStars}</Pill>
       </header>
 
-      <CompanionRoom
+      <CompanionStage
         room={room}
         species={companion.species}
         name={companion.name}
         sleeping={mood === "sleepy"}
-        hungry={needs.fullness < 50}
+        needs={needs}
+        careStars={child.careStars}
+        moodLine={MOOD_LINE[mood]}
       />
-
-      <p className="rounded-[var(--radius-inner)] bg-[var(--color-brand-soft)] px-4 py-3 text-center font-semibold text-[var(--color-brand-ink)]">
-        {MOOD_LINE[mood]}
-      </p>
-
-      <SectionCard title="Як він почувається">
-        <NeedBars needs={needs} />
-      </SectionCard>
-
-      <SectionCard title="Подбати">
-        <CareButtons needs={needs} careStars={child.careStars} />
-      </SectionCard>
 
       <SectionCard title="Облаштувати кімнату">
         <p className="mb-4 text-sm text-[var(--color-muted)]">

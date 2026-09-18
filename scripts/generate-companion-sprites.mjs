@@ -277,6 +277,66 @@ function zzz() {
   return png(L);
 }
 
+
+/* ============================================================
+   Піктограми потреб для панелі догляду
+   ============================================================ */
+
+/** Миска з кормом — «ситість». */
+function iconFeed() {
+  const L = createLayer(22, 20);
+  L.poly([[3, 9], [19, 9], [16, 17], [6, 17]], ID.bowl);
+  L.ellipse(11, 9, 8, 3, ID.bowl);
+  L.ellipse(11, 9, 6, 2, ID.teal);
+  L.ellipse(11, 8, 5, 2, ID.food);
+  L.ellipse(8, 7, 2, 1, ID.food);
+  L.ellipse(14, 7, 2, 1, ID.food);
+  return png(L, ({ px }) => {
+    for (const [x, y] of [[8, 8], [11, 7], [14, 8], [10, 9]]) px(x, y, [104, 68, 36]);
+    px(5, 8, [214, 248, 246]);
+    px(6, 7, [214, 248, 246]);
+  });
+}
+
+/** М'ячик — «настрій». */
+function iconPlay() {
+  const L = createLayer(20, 20);
+  L.ellipse(10, 10, 8, 8, ID.cream);
+  return png(L, ({ px }) => {
+    for (let y = 2; y < 19; y += 1) {
+      for (let x = 2; x < 19; x += 1) {
+        const dx = x - 10;
+        const dy = y - 10;
+        if (dx * dx + dy * dy > 64) continue;
+        if (dy > 1 && dy < 5) px(x, y, [248, 166, 188]);
+        if (dx > 1 && dx < 5 && dy < 2) px(x, y, [116, 194, 190]);
+      }
+    }
+    px(7, 6, [255, 255, 255]);
+    px(8, 5, [255, 255, 255]);
+    px(6, 7, [255, 255, 255]);
+  });
+}
+
+/** Місяць із зіркою — «енергія». */
+function iconSleep() {
+  const L = createLayer(20, 20);
+  L.ellipse(9, 10, 7, 7, ID.gold);
+  // вирізаємо серп
+  for (let y = 0; y < 20; y += 1) {
+    for (let x = 0; x < 20; x += 1) {
+      const dx = x - 13;
+      const dy = y - 8;
+      if (dx * dx + dy * dy <= 42) L.set(x, y, -1);
+    }
+  }
+  return png(L, ({ px }) => {
+    const star = [255, 240, 190];
+    for (const [x, y] of [[16, 4], [15, 5], [16, 5], [17, 5], [16, 6]]) px(x, y, star);
+    for (const [x, y] of [[14, 14], [13, 15], [14, 15], [15, 15], [14, 16]]) px(x, y, star);
+  });
+}
+
 /* ============================================================
    Меблі та предмети
    ============================================================ */
@@ -838,6 +898,12 @@ write("room", "picture-stars", picture("stars"));
 write("room", "shelf-books", shelf("books"));
 write("room", "shelf-friend", shelf("friend"));
 write("room", "window", window_());
+
+mkdirSync(join(OUT, "care"), { recursive: true });
+writeFileSync(join(OUT, "care", "feed.png"), iconFeed());
+writeFileSync(join(OUT, "care", "play.png"), iconPlay());
+writeFileSync(join(OUT, "care", "sleep.png"), iconSleep());
+count += 3;
 
 mkdirSync(join(OUT, "surface"), { recursive: true });
 const writeSurface = (name, buffer) => {

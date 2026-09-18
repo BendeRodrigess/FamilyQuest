@@ -443,3 +443,33 @@ body {
     animation: none;
   }
 }
+
+/* Критична потреба: кнопка ледь помітно «дихає», щоб привернути увагу
+   й при цьому не дратувати. */
+@keyframes fq-nudge {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.045); }
+}
+
+.fq-nudge {
+  animation: fq-nudge 1.6s ease-in-out infinite;
+}
+
+/* Коротка реакція улюбленця після дії */
+@keyframes fq-pop {
+  0%   { transform: translate(-50%, 6px) scale(0.6); opacity: 0; }
+  25%  { transform: translate(-50%, -6px) scale(1.1); opacity: 1; }
+  70%  { transform: translate(-50%, -18px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -34px) scale(0.9); opacity: 0; }
+}
+
+.fq-pop {
+  animation: fq-pop 1.6s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-nudge,
+  .fq-pop {
+    animation: none;
+  }
+}

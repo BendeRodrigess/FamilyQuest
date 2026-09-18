@@ -79,6 +79,21 @@ export const ROOM_SPRITES: Record<string, Sprite> = {
   window: { src: "/sprites/room/window.png", width: 102, height: 96 },
 };
 
+/**
+ * Піктограми потреб для панелі догляду. Ключ збігається з id дії
+ * у CARE_ACTIONS, тому нова потреба (чистота, здоров'я) підхопиться
+ * автоматично: досить додати рядок сюди й PNG у public/sprites/care.
+ */
+export const CARE_ICONS: Record<string, Sprite> = {
+  feed: { src: "/sprites/care/feed.png", width: 66, height: 60 },
+  play: { src: "/sprites/care/play.png", width: 60, height: 60 },
+  sleep: { src: "/sprites/care/sleep.png", width: 60, height: 60 },
+};
+
+export function careIcon(actionId: string): Sprite | null {
+  return CARE_ICONS[actionId] ?? null;
+}
+
 export function roomSprite(itemId: string): Sprite | null {
   return ROOM_SPRITES[itemId] ?? null;
 }
