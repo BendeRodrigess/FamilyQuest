@@ -3,9 +3,9 @@ import Link from "next/link";
 import { requireChild } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { levelInfo } from "@/lib/levels";
-import { lostAt, DEFAULT_GRACE_MINUTES } from "@/lib/tasks";
+import { lostAt, syncTaskStatuses, DEFAULT_GRACE_MINUTES } from "@/lib/tasks";
 import { currentStreak, streakLabel } from "@/lib/streak";
-import { formatDueLabel, formatTimeLeft, vocative } from "@/lib/format";
+import { formatDueLabel, formatTimeLeftPhrase, vocative } from "@/lib/format";
 import type { TaskStatus } from "@/lib/domain";
 import { IconCoin, IconFlame, IconSparkles, IconZap } from "@/components/icons";
 import { EmptyState, ProgressBar, SectionCard, StatCard } from "@/components/ui";
@@ -21,6 +21,14 @@ function questsPhrase(count: number): string {
 export default async function ChildHomePage() {
   const child = await requireChild();
   const now = new Date();
+  const zone = child.timeZone;
+
+  // Статуси синхронізуємо тут, а не лише в лейауті: лейаут і сторінка
+  // рендеряться паралельно, тож сторінка могла прочитати завдання ще до
+  // того, як прострочене стане простроченим. Раніше це було непомітно, а
+  // з живим таймером — ні: перетнувши дедлайн, він одразу просить
+  // перемалювати сторінку.
+  await syncTaskStatuses(child.familyId);
 
   const [openTasks, pendingTasks, streak] = await Promise.all([
     prisma.task.findMany({
@@ -31,7 +39,7 @@ export default async function ChildHomePage() {
       where: { childId: child.id, status: "PENDING_REVIEW" },
       orderBy: { submittedAt: "desc" },
     }),
-    currentStreak(child.id, now),
+    currentStreak(child.id, zone, now),
   ]);
 
   const info = levelInfo(child.xp);
@@ -42,8 +50,9 @@ export default async function ChildHomePage() {
     title: task.title,
     description: task.description,
     status: task.status as TaskStatus,
-    dueLabel: formatDueLabel(task.dueAt, now),
-    timeLeft: formatTimeLeft(task.dueAt, now),
+    dueAtIso: task.dueAt.toISOString(),
+    dueLabel: formatDueLabel(task.dueAt, now, zone),
+    timeLeft: formatTimeLeftPhrase(task.dueAt, now),
     parentComment: task.parentComment,
     xp: task.xpReward,
     coins: task.coinReward,

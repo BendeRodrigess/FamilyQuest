@@ -6,6 +6,7 @@ import { formatShortDate, formatSubmittedLabel } from "@/lib/format";
 import { describeWeekdays, type TaskStatus } from "@/lib/domain";
 import { IconClipboard, IconEdit, IconPlus, IconRepeat } from "@/components/icons";
 import { Avatar, EmptyState, Pill, RewardPills, SectionCard, StatusPill } from "@/components/ui";
+import { LocalDateTime } from "@/components/LocalDateTime";
 import { ReviewCard } from "@/components/parent/ReviewCard";
 import { DeleteTaskButton } from "@/components/parent/DeleteTaskButton";
 import { TemplateCard, type TemplateSummary } from "@/components/parent/TemplateCard";
@@ -36,6 +37,7 @@ export default async function ParentTasksPage({
   const showTemplates = activeFilter === "repeating";
 
   const now = new Date();
+  const zone = parent.timeZone;
 
   const [tasks, templates, childCount, counts, templateCount] = await Promise.all([
     showTemplates
@@ -158,8 +160,9 @@ export default async function ParentTasksPage({
                     title: task.title,
                     childName: task.child.displayName,
                     childColor: task.child.avatarColor,
+                    submittedAtIso: task.submittedAt?.toISOString() ?? null,
                     submittedLabel: task.submittedAt
-                      ? formatSubmittedLabel(task.submittedAt, now)
+                      ? formatSubmittedLabel(task.submittedAt, now, zone)
                       : "щойно",
                     childComment: task.childComment,
                     xp: task.xpReward,
@@ -181,7 +184,12 @@ export default async function ParentTasksPage({
                     />
                     <span>{task.child.displayName}</span>
                     <span aria-hidden="true">·</span>
-                    <span>{formatShortDate(task.dueAt, now)}</span>
+                    <span>
+                      <LocalDateTime
+                        iso={task.dueAt.toISOString()}
+                        initial={formatShortDate(task.dueAt, now, zone)}
+                      />
+                    </span>
                     {task.templateId && (
                       <Pill tone="sky">
                         <IconRepeat className="h-3.5 w-3.5" />

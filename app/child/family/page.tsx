@@ -46,7 +46,9 @@ export default async function ChildFamilyPage() {
       info: levelInfo(member.xp),
       xp: member.xp,
       done: member._count.assignedTasks,
-      streak: await currentStreak(member.id, now),
+      // Серія кожного рахується за його власною зоною, а не за зоною того,
+      // хто дивиться на список.
+      streak: await currentStreak(member.id, member.timeZone, now),
     })),
   );
 

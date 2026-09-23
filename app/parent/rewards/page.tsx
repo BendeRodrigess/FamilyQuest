@@ -6,6 +6,7 @@ import { formatCoins, formatShortDate, formatSubmittedLabel } from "@/lib/format
 import { REDEMPTION_STATUS_LABEL, REDEMPTION_STATUS_TONE, type RedemptionStatus } from "@/lib/domain";
 import { IconCoin, IconPlus, IconRewards } from "@/components/icons";
 import { Avatar, EmptyState, Pill, SectionCard, StatCard } from "@/components/ui";
+import { LocalDateTime } from "@/components/LocalDateTime";
 import { PayoutForm } from "@/components/parent/PayoutForm";
 import { RewardCard, type RewardSummary } from "@/components/parent/RewardCard";
 import { RedemptionCard, type RedemptionItem } from "@/components/parent/RedemptionCard";
@@ -27,6 +28,7 @@ export default async function ParentRewardsPage({
   const params = await searchParams;
   const tab = params.tab === "shop" ? "shop" : "coins";
   const now = new Date();
+  const zone = parent.timeZone;
 
   const [children, pending, rewards, history, totals, recentRedemptions] = await Promise.all([
     prisma.user.findMany({
@@ -77,7 +79,8 @@ export default async function ParentRewardsPage({
     cost: item.costSnapshot,
     childName: item.child.displayName,
     childColor: item.child.avatarColor,
-    requestedLabel: formatSubmittedLabel(item.createdAt, now),
+    requestedAtIso: item.createdAt.toISOString(),
+    requestedLabel: formatSubmittedLabel(item.createdAt, now, zone),
     childNote: item.childNote,
   }));
 
@@ -209,7 +212,14 @@ export default async function ParentRewardsPage({
                       <p className="truncate text-sm font-semibold">{item.titleSnapshot}</p>
                       <p className="text-xs text-[var(--color-muted)]">
                         {item.child.displayName} ·{" "}
-                        {item.decidedAt ? formatShortDate(item.decidedAt, now) : "—"}
+                        {item.decidedAt ? (
+                          <LocalDateTime
+                            iso={item.decidedAt.toISOString()}
+                            initial={formatShortDate(item.decidedAt, now, zone)}
+                          />
+                        ) : (
+                          "—"
+                        )}
                       </p>
                     </div>
                     <Pill tone={REDEMPTION_STATUS_TONE[item.status as RedemptionStatus]}>
@@ -246,7 +256,10 @@ export default async function ParentRewardsPage({
                       </p>
                       <p className="text-xs text-[var(--color-muted)]">
                         {entry.child.displayName} · {LEDGER_REASON_LABEL[entry.reason]} ·{" "}
-                        {formatShortDate(entry.createdAt, now)}
+                        <LocalDateTime
+                          iso={entry.createdAt.toISOString()}
+                          initial={formatShortDate(entry.createdAt, now, zone)}
+                        />
                       </p>
                     </div>
                     <Pill tone={entry.amount > 0 ? "mint" : "grey"}>

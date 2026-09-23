@@ -4,12 +4,15 @@ import { useActionState, useState } from "react";
 
 import { approveTaskAction, rejectTaskAction } from "@/app/actions/tasks";
 import { Avatar, FormError, Pill, RewardPills } from "@/components/ui";
+import { LocalDateTime } from "@/components/LocalDateTime";
 
 export type ReviewItem = {
   taskId: string;
   title: string;
   childName: string;
   childColor: string;
+  /** Момент подання; порожньо — ще не подано. */
+  submittedAtIso: string | null;
   submittedLabel: string;
   childComment: string | null;
   xp: number;
@@ -33,7 +36,16 @@ export function ReviewCard({ item }: { item: ReviewItem }) {
       <div className="mb-3 flex items-center gap-2 text-sm text-[var(--color-muted)]">
         <Avatar name={item.childName} color={item.childColor} size="sm" />
         <span>
-          {item.childName} · позначено виконаним {item.submittedLabel}
+          {item.childName} · позначено виконаним{" "}
+          {item.submittedAtIso ? (
+            <LocalDateTime
+              iso={item.submittedAtIso}
+              initial={item.submittedLabel}
+              variant="submitted"
+            />
+          ) : (
+            item.submittedLabel
+          )}
         </span>
       </div>
 

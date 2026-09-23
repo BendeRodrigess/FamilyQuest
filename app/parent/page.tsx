@@ -13,6 +13,7 @@ export default async function ParentHomePage() {
   const parent = await requireParent();
   const familyId = parent.familyId;
   const now = new Date();
+  const zone = parent.timeZone;
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [children, pendingTasks, activeCount, monthCoins, pendingRedemptions] = await Promise.all([
@@ -47,7 +48,10 @@ export default async function ParentHomePage() {
     title: task.title,
     childName: task.child.displayName,
     childColor: task.child.avatarColor,
-    submittedLabel: task.submittedAt ? formatSubmittedLabel(task.submittedAt, now) : "щойно",
+    submittedAtIso: task.submittedAt?.toISOString() ?? null,
+    submittedLabel: task.submittedAt
+      ? formatSubmittedLabel(task.submittedAt, now, zone)
+      : "щойно",
     childComment: task.childComment,
     xp: task.xpReward,
     coins: task.coinReward,
@@ -60,7 +64,8 @@ export default async function ParentHomePage() {
     cost: item.costSnapshot,
     childName: item.child.displayName,
     childColor: item.child.avatarColor,
-    requestedLabel: formatSubmittedLabel(item.createdAt, now),
+    requestedAtIso: item.createdAt.toISOString(),
+    requestedLabel: formatSubmittedLabel(item.createdAt, now, zone),
     childNote: item.childNote,
   }));
 

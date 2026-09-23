@@ -2,8 +2,8 @@ import Link from "next/link";
 
 import { requireChild } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { lostAt, DEFAULT_GRACE_MINUTES } from "@/lib/tasks";
-import { formatDueLabel, formatTimeLeft } from "@/lib/format";
+import { lostAt, syncTaskStatuses, DEFAULT_GRACE_MINUTES } from "@/lib/tasks";
+import { formatDueLabel, formatTimeLeftPhrase } from "@/lib/format";
 import type { TaskStatus } from "@/lib/domain";
 import { IconSparkles } from "@/components/icons";
 import { EmptyState, SectionCard } from "@/components/ui";
@@ -26,6 +26,14 @@ export default async function ChildTasksPage({
   const child = await requireChild();
   const params = await searchParams;
   const now = new Date();
+  const zone = child.timeZone;
+
+  // Статуси синхронізуємо тут, а не лише в лейауті: лейаут і сторінка
+  // рендеряться паралельно, тож сторінка могла прочитати завдання ще до
+  // того, як прострочене стане простроченим. Раніше це було непомітно, а
+  // з живим таймером — ні: перетнувши дедлайн, він одразу просить
+  // перемалювати сторінку.
+  await syncTaskStatuses(child.familyId);
 
   const activeFilter: FilterKey =
     (FILTERS.find((f) => f.key === params.filter)?.key as FilterKey) ?? "open";
@@ -52,8 +60,9 @@ export default async function ChildTasksPage({
     title: task.title,
     description: task.description,
     status: task.status as TaskStatus,
-    dueLabel: formatDueLabel(task.dueAt, now),
-    timeLeft: formatTimeLeft(task.dueAt, now),
+    dueAtIso: task.dueAt.toISOString(),
+    dueLabel: formatDueLabel(task.dueAt, now, zone),
+    timeLeft: formatTimeLeftPhrase(task.dueAt, now),
     parentComment: task.parentComment,
     xp: task.xpReward,
     coins: task.coinReward,

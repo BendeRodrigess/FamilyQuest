@@ -5,13 +5,18 @@ import { useActionState, useState } from "react";
 import { submitTaskAction } from "@/app/actions/tasks";
 import type { TaskStatus } from "@/lib/domain";
 import { FormError, Pill, RewardPills, StatusPill } from "@/components/ui";
+import { LocalDateTime } from "@/components/LocalDateTime";
 import { OverdueCountdown } from "./OverdueCountdown";
+import { TimeLeft } from "./TimeLeft";
 
 export type Quest = {
   taskId: string;
   title: string;
   description: string | null;
   status: TaskStatus;
+  /** Дедлайн як абсолютний момент — підпис і таймер рахує браузер. */
+  dueAtIso: string;
+  /** Той самий підпис, порахований сервером за збереженою зоною. */
   dueLabel: string;
   timeLeft: string;
   parentComment: string | null;
@@ -48,8 +53,13 @@ export function QuestCard({ quest }: { quest: Quest }) {
       )}
 
       <p className="mb-3 text-sm text-[var(--color-muted)]">
-        {quest.dueLabel}
-        {quest.status === "ACTIVE" && <span> · лишилось {quest.timeLeft}</span>}
+        <LocalDateTime iso={quest.dueAtIso} initial={quest.dueLabel} variant="due" />
+        {quest.status === "ACTIVE" && (
+          <span>
+            {" · "}
+            <TimeLeft dueAtIso={quest.dueAtIso} initial={quest.timeLeft} />
+          </span>
+        )}
       </p>
 
       {quest.status === "REJECTED" && quest.parentComment && (

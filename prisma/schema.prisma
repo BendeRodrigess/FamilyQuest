@@ -81,6 +81,11 @@ model User {
   displayName String
   avatarColor String @default("violet")
 
+  // IANA-зона пристрою, напр. "Europe/Kyiv". Визначає браузер і надсилає
+  // при відкритті застосунку. Потрібна серверу там, де браузера поруч немає:
+  // генерація повторюваних завдань і підрахунок серії.
+  timeZone String @default("UTC")
+
   email    String? @unique // тільки батьки
   username String? @unique // тільки діти
 

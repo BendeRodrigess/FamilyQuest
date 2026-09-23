@@ -33,8 +33,24 @@ export function TaskForm({
   const [state, formAction, isPending] = useActionState(action, null);
   const [xp, setXp] = useState(values.xpReward);
 
+  /**
+   * `datetime-local` віддає настінний час без зсуву — «2026-09-23T20:00».
+   * Перетворюємо його на абсолютний момент **тут**, у браузері: тільки він
+   * знає зону пристрою. Сервер раніше робив це сам і трактував такий рядок
+   * у власній зоні, через що київські 20:00 ставали 20:00 UTC.
+   */
+  function submit(formData: FormData) {
+    const local = String(formData.get("dueAtLocal") ?? "");
+    const moment = new Date(local);
+
+    formData.delete("dueAtLocal");
+    formData.set("dueAt", Number.isNaN(moment.getTime()) ? "" : moment.toISOString());
+
+    formAction(formData);
+  }
+
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form action={submit} className="flex flex-col gap-5">
       {values.taskId && <input type="hidden" name="taskId" value={values.taskId} />}
 
       <div>
@@ -93,7 +109,7 @@ export function TaskForm({
           </label>
           <input
             id="dueAt"
-            name="dueAt"
+            name="dueAtLocal"
             type="datetime-local"
             defaultValue={values.dueAtLocal}
             required

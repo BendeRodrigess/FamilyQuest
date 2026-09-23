@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { syncTaskStatuses } from "@/lib/tasks";
 import { generateTodayTasks } from "@/lib/templates";
 import { AppShell } from "@/components/AppShell";
+import { TimeZoneSync } from "@/components/TimeZoneSync";
 
 export default async function ParentLayout({ children }: { children: ReactNode }) {
   const parent = await requireParent();
@@ -33,6 +34,8 @@ export default async function ParentLayout({ children }: { children: ReactNode }
       }}
       badges={{ tasks: pendingTasks, rewards: pendingRedemptions }}
     >
+      {/* Зона пристрою потрібна серверу для повторюваних завдань і серії. */}
+      <TimeZoneSync current={parent.timeZone} />
       {children}
     </AppShell>
   );

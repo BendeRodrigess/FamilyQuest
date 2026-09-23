@@ -2,20 +2,7 @@ import "server-only";
 
 import { prisma } from "./prisma";
 import { parseWeekdays } from "./domain";
-
-/** Локальна дата у форматі «YYYY-MM-DD» — ключ дня для екземплярів. */
-export function dayKey(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-/** Час «HH:mm» у конкретну дату. */
-function withTime(date: Date, time: string): Date {
-  const [hours, minutes] = time.split(":").map(Number);
-  const result = new Date(date);
-  result.setHours(hours || 0, minutes || 0, 0, 0);
-  return result;
-}
+import { dayKeyIn, wallClockToInstant, weekdayIn } from "./time";
 
 /**
  * Створює екземпляри повторюваних завдань на сьогодні.
@@ -24,48 +11,58 @@ function withTime(date: Date, time: string): Date {
  *
  * Пропущені дні НЕ добираються: якщо застосунок не відкривали три дні,
  * дитина не має отримати три прострочені «почистити зуби» одночасно.
+ *
+ * Доба й час рахуються за зоною **дитини**, а не сервера: «щодня до 20:00»
+ * означає 20:00 на годиннику дитини. Через це «сьогодні» в кожної дитини
+ * своє, тож відфільтрувати вже згенероване одним запитом не вийде —
+ * шаблонів у родині одиниці, тому розбираємо їх у пам'яті.
  */
 export async function generateTodayTasks(familyId: string): Promise<void> {
   const now = new Date();
-  const today = dayKey(now);
-  const weekday = now.getDay();
 
   const templates = await prisma.taskTemplate.findMany({
-    where: {
-      familyId,
-      isPaused: false,
-      // Уже згенеровані сьогодні шаблони пропускаємо без запиту до Task.
-      OR: [{ lastGeneratedOn: null }, { lastGeneratedOn: { not: today } }],
-    },
+    where: { familyId, isPaused: false },
+    include: { child: { select: { timeZone: true } } },
   });
 
   if (templates.length === 0) return;
 
-  const dueToday = templates.filter((template) =>
-    parseWeekdays(template.weekdays).includes(weekday),
-  );
-
+  const due: { template: (typeof templates)[number]; day: string }[] = [];
   // Шаблони, у яких сьогодні «вихідний», теж позначаємо обробленими,
   // щоб не перебирати їх при кожному відкритті сторінки.
-  const skipped = templates.filter((template) => !dueToday.includes(template));
-  if (skipped.length > 0) {
+  const restingByDay = new Map<string, string[]>();
+
+  for (const template of templates) {
+    const zone = template.child.timeZone;
+    const day = dayKeyIn(now, zone);
+
+    if (template.lastGeneratedOn === day) continue;
+
+    if (parseWeekdays(template.weekdays).includes(weekdayIn(now, zone))) {
+      due.push({ template, day });
+    } else {
+      restingByDay.set(day, [...(restingByDay.get(day) ?? []), template.id]);
+    }
+  }
+
+  for (const [day, ids] of restingByDay) {
     await prisma.taskTemplate.updateMany({
-      where: { id: { in: skipped.map((t) => t.id) } },
-      data: { lastGeneratedOn: today },
+      where: { id: { in: ids } },
+      data: { lastGeneratedOn: day },
     });
   }
 
-  for (const template of dueToday) {
+  for (const { template, day } of due) {
     try {
       await prisma.task.create({
         data: {
           familyId,
           childId: template.childId,
           templateId: template.id,
-          occurrenceDate: today,
+          occurrenceDate: day,
           title: template.title,
           description: template.description,
-          dueAt: withTime(now, template.dueTime),
+          dueAt: wallClockToInstant(day, template.dueTime, template.child.timeZone),
           xpReward: template.xpReward,
           coinReward: template.coinReward,
           autoApprove: template.autoApprove,
@@ -79,7 +76,7 @@ export async function generateTodayTasks(familyId: string): Promise<void> {
 
     await prisma.taskTemplate.update({
       where: { id: template.id },
-      data: { lastGeneratedOn: today },
+      data: { lastGeneratedOn: day },
     });
   }
 }

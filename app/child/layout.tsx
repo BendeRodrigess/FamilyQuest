@@ -6,6 +6,7 @@ import { syncTaskStatuses } from "@/lib/tasks";
 import { generateTodayTasks } from "@/lib/templates";
 import { levelInfo } from "@/lib/levels";
 import { AppShell } from "@/components/AppShell";
+import { TimeZoneSync } from "@/components/TimeZoneSync";
 
 export default async function ChildLayout({ children }: { children: ReactNode }) {
   const child = await requireChild();
@@ -29,6 +30,8 @@ export default async function ChildLayout({ children }: { children: ReactNode })
       }}
       badges={{ tasks: activeCount }}
     >
+      {/* Зона пристрою потрібна серверу для повторюваних завдань і серії. */}
+      <TimeZoneSync current={child.timeZone} />
       {children}
     </AppShell>
   );

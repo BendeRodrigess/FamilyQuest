@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "./prisma";
-import { dayKey } from "./templates";
+import { dayKeyIn, shiftDayKey } from "./time";
 
 /**
  * Серія виконань — скільки днів поспіль дитина має хоча б одне
@@ -11,10 +11,18 @@ import { dayKey } from "./templates";
  * зараховували вчора, серія ще жива, і сьогодні її можна продовжити.
  * Обривається вона лише тоді, коли пропущено цілий день.
  *
+ * Межа доби — за зоною дитини, а не сервера. Інакше в Києві серія
+ * перемикалася б о 03:00, і виконане об 01:00 зараховувалося б
+ * у вчорашній день.
+ *
  * Рахуємо на льоту з журналу нарахувань — окреме поле в базі
  * рано чи пізно розійшлося б із реальністю.
  */
-export async function currentStreak(childId: string, now: Date = new Date()): Promise<number> {
+export async function currentStreak(
+  childId: string,
+  zone: string,
+  now: Date = new Date(),
+): Promise<number> {
   // Двох місяців вистачає: довші серії в сімейному застосунку — рідкість,
   // а запит лишається дешевим.
   const since = new Date(now.getTime() - 62 * 24 * 60 * 60 * 1000);
@@ -32,21 +40,20 @@ export async function currentStreak(childId: string, now: Date = new Date()): Pr
 
   if (entries.length === 0) return 0;
 
-  const days = new Set(entries.map((entry) => dayKey(entry.createdAt)));
+  const days = new Set(entries.map((entry) => dayKeyIn(entry.createdAt, zone)));
 
-  const cursor = new Date(now);
-  cursor.setHours(0, 0, 0, 0);
+  let cursor = dayKeyIn(now, zone);
 
   // Якщо сьогодні ще нічого не зараховано, починаємо відлік із учора.
-  if (!days.has(dayKey(cursor))) {
-    cursor.setDate(cursor.getDate() - 1);
-    if (!days.has(dayKey(cursor))) return 0;
+  if (!days.has(cursor)) {
+    cursor = shiftDayKey(cursor, -1);
+    if (!days.has(cursor)) return 0;
   }
 
   let streak = 0;
-  while (days.has(dayKey(cursor))) {
+  while (days.has(cursor)) {
     streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
+    cursor = shiftDayKey(cursor, -1);
   }
 
   return streak;

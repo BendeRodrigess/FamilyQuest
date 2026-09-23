@@ -47,7 +47,7 @@ export default async function EditTaskPage({
             childId: task.childId,
             title: task.title,
             description: task.description ?? "",
-            dueAtLocal: toDateTimeLocalValue(task.dueAt),
+            dueAtLocal: toDateTimeLocalValue(task.dueAt, parent.timeZone),
             xpReward: task.xpReward,
             coinReward: task.coinReward,
           }}

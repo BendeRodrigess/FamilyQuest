@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireParent } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toDateTimeLocalValue } from "@/lib/format";
+import { dayKeyIn, shiftDayKey, wallClockToInstant } from "@/lib/time";
 import { EVERY_DAY } from "@/lib/domain";
 import { SectionCard } from "@/components/ui";
 import { NewTaskTabs } from "@/components/parent/NewTaskTabs";
@@ -19,11 +20,17 @@ export default async function NewTaskPage() {
   // Без жодної дитини створювати завдання нема кому.
   if (children.length === 0) redirect("/parent/family");
 
-  // За замовчуванням — сьогодні о 20:00, а якщо цей час уже минув, то завтра.
-  const due = new Date();
-  due.setSeconds(0, 0);
-  if (due.getHours() >= 20) due.setDate(due.getDate() + 1);
-  due.setHours(20, 0, 0, 0);
+  // За замовчуванням — сьогодні о 20:00 за часом батьків, а якщо цей час уже
+  // минув, то завтра. «20:00» тут настінний час у зоні користувача, тому
+  // спершу будуємо його, а вже з нього отримуємо абсолютний момент.
+  const now = new Date();
+  const zone = parent.timeZone;
+  const today = dayKeyIn(now, zone);
+
+  let due = wallClockToInstant(today, "20:00", zone);
+  if (due.getTime() <= now.getTime()) {
+    due = wallClockToInstant(shiftDayKey(today, 1), "20:00", zone);
+  }
 
   return (
     <div className="mx-auto flex max-w-[640px] flex-col gap-5">
@@ -43,7 +50,7 @@ export default async function NewTaskPage() {
             childId: children[0].id,
             title: "",
             description: "",
-            dueAtLocal: toDateTimeLocalValue(due),
+            dueAtLocal: toDateTimeLocalValue(due, zone),
             xpReward: 15,
             coinReward: 0,
           }}

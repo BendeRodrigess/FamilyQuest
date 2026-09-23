@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 
 import { declineRedemptionAction, fulfillRedemptionAction } from "@/app/actions/shop";
 import { Avatar, FormError, Pill } from "@/components/ui";
+import { LocalDateTime } from "@/components/LocalDateTime";
 
 export type RedemptionItem = {
   id: string;
@@ -12,6 +13,7 @@ export type RedemptionItem = {
   cost: number;
   childName: string;
   childColor: string;
+  requestedAtIso: string;
   requestedLabel: string;
   childNote: string | null;
 };
@@ -32,7 +34,12 @@ export function RedemptionCard({ item }: { item: RedemptionItem }) {
         <div className="min-w-0 flex-1">
           <h3 className="font-bold leading-snug">{item.title}</h3>
           <p className="mt-0.5 text-sm text-[var(--color-muted)]">
-            замовлено {item.requestedLabel}
+            замовлено{" "}
+            <LocalDateTime
+              iso={item.requestedAtIso}
+              initial={item.requestedLabel}
+              variant="submitted"
+            />
           </p>
         </div>
         <Pill tone="amber">Очікує видачі</Pill>

@@ -8,6 +8,7 @@ import {
 } from "@/lib/domain";
 import { IconCoin, IconRewards, IconZap } from "@/components/icons";
 import { EmptyState, Pill, SectionCard, StatCard } from "@/components/ui";
+import { LocalDateTime } from "@/components/LocalDateTime";
 import { ShopCard, type ShopItem } from "@/components/child/ShopCard";
 
 const LEDGER_REASON_LABEL: Record<string, string> = {
@@ -20,6 +21,7 @@ const LEDGER_REASON_LABEL: Record<string, string> = {
 export default async function ChildRewardsPage() {
   const child = await requireChild();
   const now = new Date();
+  const zone = child.timeZone;
 
   const [rewards, myRedemptions, history] = await Promise.all([
     prisma.reward.findMany({
@@ -79,7 +81,11 @@ export default async function ChildRewardsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{item.titleSnapshot}</p>
                   <p className="text-xs text-[var(--color-muted)]">
-                    {item.costSnapshot} коінів · {formatShortDate(item.createdAt, now)}
+                    {item.costSnapshot} коінів ·{" "}
+                    <LocalDateTime
+                      iso={item.createdAt.toISOString()}
+                      initial={formatShortDate(item.createdAt, now, zone)}
+                    />
                   </p>
                 </div>
                 <Pill tone="amber">Очікує видачі</Pill>
@@ -119,7 +125,14 @@ export default async function ChildRewardsPage() {
                     </p>
                   ) : (
                     <p className="text-xs text-[var(--color-muted)]">
-                      {item.decidedAt ? formatShortDate(item.decidedAt, now) : "—"}
+                      {item.decidedAt ? (
+                        <LocalDateTime
+                          iso={item.decidedAt.toISOString()}
+                          initial={formatShortDate(item.decidedAt, now, zone)}
+                        />
+                      ) : (
+                        "—"
+                      )}
                     </p>
                   )}
                 </div>
@@ -163,7 +176,11 @@ export default async function ChildRewardsPage() {
                       {entry.task?.title ?? entry.note ?? LEDGER_REASON_LABEL[entry.reason]}
                     </p>
                     <p className="text-xs text-[var(--color-muted)]">
-                      {LEDGER_REASON_LABEL[entry.reason]} · {formatShortDate(entry.createdAt, now)}
+                      {LEDGER_REASON_LABEL[entry.reason]} ·{" "}
+                      <LocalDateTime
+                        iso={entry.createdAt.toISOString()}
+                        initial={formatShortDate(entry.createdAt, now, zone)}
+                      />
                     </p>
                   </div>
 
