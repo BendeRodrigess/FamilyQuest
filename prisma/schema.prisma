@@ -18,7 +18,7 @@ model Family {
   createdAt DateTime @default(now())
 
   // Тривалість таймера зникнення простроченого завдання (Хвиля 2).
-  overdueGraceMinutes Int @default(60)
+  overdueGraceMinutes Int     @default(60)
   // Чи бачать діти прогрес одне одного (Хвиля 2).
   showSiblingProgress Boolean @default(true)
 
@@ -50,7 +50,7 @@ model TaskTemplate {
   // Щоденне завдання зберігається як "0123456".
   weekdays String
   // Час дедлайну в межах дня, "HH:mm".
-  dueTime String
+  dueTime  String
 
   // Дрібні щоденні звички не варті окремого підтвердження щоразу:
   // з цим прапорцем натискання дитини одразу зараховує винагороду.
@@ -100,6 +100,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   sessions      Session[]
+  notifications Notification[]
   assignedTasks Task[]             @relation("ChildTasks")
   templates     TaskTemplate[]     @relation("ChildTemplates")
   redemptions   RewardRedemption[] @relation("ChildRedemptions")
@@ -143,8 +144,8 @@ model Task {
   reviewedAt  DateTime?
 
   // Звідки взялося завдання. Порожньо — створене вручну.
-  templateId String?
-  template   TaskTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateId     String?
+  template       TaskTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   // День, за який згенеровано екземпляр, "YYYY-MM-DD".
   occurrenceDate String?
 
@@ -155,7 +156,8 @@ model Task {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ledger LedgerEntry[]
+  ledger        LedgerEntry[]
+  notifications Notification[]
 
   @@unique([templateId, occurrenceDate])
   @@index([familyId])
@@ -172,7 +174,7 @@ model LedgerEntry {
   child    User   @relation(fields: [childId], references: [id], onDelete: Cascade)
 
   kind   String // "XP" | "COIN"
-  amount Int    // додатне — нарахування, від'ємне — виплата
+  amount Int // додатне — нарахування, від'ємне — виплата
   reason String // "TASK_APPROVED" | "PAYOUT"
 
   taskId String?
@@ -195,7 +197,7 @@ model Reward {
 
   title       String
   description String?
-  emoji       String @default("🎁")
+  emoji       String  @default("🎁")
 
   costCoins Int
 
@@ -240,4 +242,39 @@ model RewardRedemption {
 
   @@index([familyId, status])
   @@index([childId, status])
+}
+
+/// Персональне сповіщення. Один рядок — один адресат.
+///
+/// Новини про сам FamilyQuest сюди НЕ потраплять: для них буде окрема
+/// модель з одним рядком на всіх і окремими позначками прочитання.
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Тип рядком, як статуси завдань: новий тип не потребує міграції схеми.
+  // Емодзі й категорію для нього дає lib/notifications/catalog.ts.
+  type  String
+  title String
+  body  String
+  /// Внутрішній маршрут, куди веде натискання. Порожньо — нікуди не веде.
+  href  String?
+
+  /// Завдання, якого стосується сповіщення. При видаленні завдання
+  /// сповіщення лишається в історії, просто втрачає посилання.
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  /// Ключ ідемпотентності, напр. "due-soon-60:<taskId>". Унікальний —
+  /// саме він зробить повторний запуск фонового job'а безпечним, коли
+  /// дійдемо до нагадувань за часом. Події, що трапляються один раз
+  /// (створення завдання), ключа не потребують: NULL-ів може бути багато.
+  dedupeKey String? @unique
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
 }

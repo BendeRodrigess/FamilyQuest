@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { logoutAction } from "@/app/actions/auth";
 import { Avatar } from "./ui";
 import { ThemeToggle } from "./theme/ThemeToggle";
+import { NotificationBell } from "./NotificationBell";
 import {
   IconHome,
   IconTasks,
@@ -33,7 +34,7 @@ export type ShellUser = {
 
 const iconClass = "h-[1.15rem] w-[1.15rem]";
 
-export type Badges = { tasks?: number; rewards?: number };
+export type Badges = { tasks?: number; rewards?: number; notifications?: number };
 
 function buildNav(role: "PARENT" | "CHILD", badges: Badges): NavItem[] {
   if (role === "PARENT") {
@@ -93,6 +94,7 @@ export function AppShell({
               <p className="text-xs leading-tight text-[var(--color-muted)]">{user.subtitle}</p>
             </div>
             <Avatar name={user.displayName} color={user.avatarColor} />
+            <NotificationBell href={`${rootHref}/notifications`} count={badges.notifications ?? 0} />
             <ThemeToggle />
             <form action={logoutAction}>
               <button

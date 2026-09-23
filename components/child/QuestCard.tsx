@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { submitTaskAction } from "@/app/actions/tasks";
 import type { TaskStatus } from "@/lib/domain";
@@ -28,6 +28,8 @@ export type Quest = {
   autoApprove: boolean;
   /** Створене з повторюваного шаблону. */
   repeating: boolean;
+  /** Сюди привело сповіщення — картку підсвічуємо й гортаємо до неї. */
+  highlight?: boolean;
 };
 
 export function QuestCard({ quest }: { quest: Quest }) {
@@ -37,8 +39,21 @@ export function QuestCard({ quest }: { quest: Quest }) {
   const canSubmit = quest.status === "ACTIVE" || quest.status === "REJECTED";
   const isDone = quest.status === "DONE";
 
+  // Коли дитина прийшла сюди зі сповіщення, потрібний квест може бути
+  // нижче за екран — гортаємо до нього, інакше перехід виглядає як «нічого
+  // не сталося».
+  const card = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (quest.highlight) card.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [quest.highlight]);
+
   return (
-    <article className={`fq-card-flat p-4 ${isDone ? "opacity-70" : ""}`}>
+    <article
+      ref={card}
+      className={`fq-card-flat p-4 ${isDone ? "opacity-70" : ""} ${
+        quest.highlight ? "ring-2 ring-[var(--color-brand)]" : ""
+      }`}
+    >
       <div className="mb-2 flex items-start justify-between gap-3">
         <h3 className="font-bold leading-snug">{quest.title}</h3>
         {quest.status === "ACTIVE" ? (

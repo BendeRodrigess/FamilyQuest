@@ -7,6 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireChild, requireParent } from "@/lib/auth";
 import { approveTask, rejectTask, submitTask } from "@/lib/tasks";
+import { notify } from "@/lib/notifications/emit";
 import { COIN_MAX, COIN_MIN, XP_MAX, XP_MIN } from "@/lib/domain";
 import { type ActionState, fail, ok } from "./types";
 
@@ -83,7 +84,7 @@ export async function createTaskAction(
   });
   if (!child) return fail("Дитину не знайдено.");
 
-  await prisma.task.create({
+  const task = await prisma.task.create({
     data: {
       familyId: parent.familyId,
       childId: child.id,
@@ -94,6 +95,19 @@ export async function createTaskAction(
       coinReward: data.coinReward,
       status: "ACTIVE",
     },
+  });
+
+  // Сповіщення надсилаємо саме тут, а не в generateTodayTasks: щоденна
+  // «почистити зуби» не повинна щоранку писати «Нове завдання» — це шум,
+  // від якого дитина перестане дивитися на дзвіночок узагалі.
+  // Нагадування про дедлайн повторюваним завданням згодом лишиться.
+  await notify({
+    userId: child.id,
+    type: "TASK_ASSIGNED",
+    title: "Нове завдання",
+    body: `Вам додано «${task.title}». Нагорода: +${task.xpReward} XP.`,
+    href: `/child/tasks?task=${task.id}`,
+    taskId: task.id,
   });
 
   revalidateParent();

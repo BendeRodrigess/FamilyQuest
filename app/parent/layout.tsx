@@ -4,6 +4,7 @@ import { requireParent } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { syncTaskStatuses } from "@/lib/tasks";
 import { generateTodayTasks } from "@/lib/templates";
+import { unreadCount } from "@/lib/notifications/query";
 import { AppShell } from "@/components/AppShell";
 import { TimeZoneSync } from "@/components/TimeZoneSync";
 
@@ -15,13 +16,14 @@ export default async function ParentLayout({ children }: { children: ReactNode }
   await generateTodayTasks(parent.familyId);
   await syncTaskStatuses(parent.familyId);
 
-  const [pendingTasks, pendingRedemptions] = await Promise.all([
+  const [pendingTasks, pendingRedemptions, unread] = await Promise.all([
     prisma.task.count({
       where: { familyId: parent.familyId, status: "PENDING_REVIEW" },
     }),
     prisma.rewardRedemption.count({
       where: { familyId: parent.familyId, status: "PENDING" },
     }),
+    unreadCount(parent.id),
   ]);
 
   return (
@@ -32,7 +34,7 @@ export default async function ParentLayout({ children }: { children: ReactNode }
         avatarColor: parent.avatarColor,
         role: "PARENT",
       }}
-      badges={{ tasks: pendingTasks, rewards: pendingRedemptions }}
+      badges={{ tasks: pendingTasks, rewards: pendingRedemptions, notifications: unread }}
     >
       {/* Зона пристрою потрібна серверу для повторюваних завдань і серії. */}
       <TimeZoneSync current={parent.timeZone} />

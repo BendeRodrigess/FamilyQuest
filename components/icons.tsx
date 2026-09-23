@@ -169,6 +169,13 @@ export const IconSparkles = (p: IconProps) => (
   </Svg>
 );
 
+export const IconBell = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M18 8.5a6 6 0 1 0-12 0c0 4.5-1.8 5.9-1.8 5.9h15.6S18 13 18 8.5" />
+    <path d="M10.3 18.5a2 2 0 0 0 3.4 0" />
+  </Svg>
+);
+
 export const IconInbox = (p: IconProps) => (
   <Svg {...p}>
     <path d="M3 13h4l1.5 3h7L17 13h4" />

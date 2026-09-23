@@ -21,7 +21,7 @@ type FilterKey = (typeof FILTERS)[number]["key"];
 export default async function ChildTasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; task?: string }>;
 }) {
   const child = await requireChild();
   const params = await searchParams;
@@ -69,6 +69,8 @@ export default async function ChildTasksPage({
     lostAtIso: task.status === "OVERDUE" ? lostAt(task.dueAt, grace).toISOString() : null,
     autoApprove: task.autoApprove,
     repeating: task.templateId !== null,
+    // ?task= приходить зі сповіщення «Нове завдання».
+    highlight: task.id === params.task,
   }));
 
   return (
