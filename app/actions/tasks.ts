@@ -7,7 +7,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireChild, requireParent } from "@/lib/auth";
 import { approveTask, rejectTask, submitTask } from "@/lib/tasks";
-import { notify } from "@/lib/notifications/emit";
+import {
+  notifyTaskApproved,
+  notifyTaskAssigned,
+  notifyTaskRejected,
+  notifyTaskSubmitted,
+} from "@/lib/notifications/events";
 import { COIN_MAX, COIN_MIN, XP_MAX, XP_MIN } from "@/lib/domain";
 import { type ActionState, fail, ok } from "./types";
 
@@ -101,14 +106,7 @@ export async function createTaskAction(
   // «почистити зуби» не повинна щоранку писати «Нове завдання» — це шум,
   // від якого дитина перестане дивитися на дзвіночок узагалі.
   // Нагадування про дедлайн повторюваним завданням згодом лишиться.
-  await notify({
-    userId: child.id,
-    type: "TASK_ASSIGNED",
-    title: "Нове завдання",
-    body: `Вам додано «${task.title}». Нагорода: +${task.xpReward} XP.`,
-    href: `/child/tasks?task=${task.id}`,
-    taskId: task.id,
-  });
+  await notifyTaskAssigned(task.id);
 
   revalidateParent();
   revalidateChild();
@@ -194,6 +192,13 @@ export async function submitTaskAction(
     return fail(error instanceof Error ? error.message : "Не вдалося надіслати на перевірку.");
   }
 
+  // Автозарахування — це не запит на перевірку: батькам нема що робити,
+  // а дитина одразу бачить результат на екрані. Щоденна звичка інакше
+  // писала б у центр двічі на день без жодної користі.
+  if (!result.autoApproved) {
+    await notifyTaskSubmitted(taskId);
+  }
+
   revalidateChild();
   revalidateParent();
 
@@ -219,6 +224,11 @@ export async function approveTaskAction(
 
   try {
     const result = await approveTask(taskId, parent.familyId);
+
+    // Винагорода береться з результату зарахування, а не з полів завдання:
+    // джерело правди — creditTask, який її і нарахував.
+    await notifyTaskApproved(taskId, { xp: result.xpAwarded, coins: result.coinsAwarded });
+
     revalidateParent();
     revalidateChild();
 
@@ -261,6 +271,8 @@ export async function rejectTaskAction(
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Не вдалося відхилити.");
   }
+
+  await notifyTaskRejected(parsed.data.taskId);
 
   revalidateParent();
   revalidateChild();

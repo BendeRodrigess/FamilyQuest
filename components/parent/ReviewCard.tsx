@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { approveTaskAction, rejectTaskAction } from "@/app/actions/tasks";
 import { Avatar, FormError, Pill, RewardPills } from "@/components/ui";
@@ -17,6 +17,8 @@ export type ReviewItem = {
   childComment: string | null;
   xp: number;
   coins: number;
+  /** Сюди привело сповіщення — картку підсвічуємо й гортаємо до неї. */
+  highlight?: boolean;
 };
 
 export function ReviewCard({ item }: { item: ReviewItem }) {
@@ -26,8 +28,18 @@ export function ReviewCard({ item }: { item: ReviewItem }) {
 
   const busy = approving || isRejecting;
 
+  // Зі сповіщення батько приходить до конкретного завдання, а на перевірці
+  // їх може бути кілька — гортаємо до потрібного.
+  const card = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (item.highlight) card.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [item.highlight]);
+
   return (
-    <article className="fq-card-flat p-4">
+    <article
+      ref={card}
+      className={`fq-card-flat p-4 ${item.highlight ? "ring-2 ring-[var(--color-brand)]" : ""}`}
+    >
       <div className="mb-2.5 flex items-start justify-between gap-3">
         <h3 className="font-bold leading-snug text-[var(--color-ink)]">{item.title}</h3>
         <Pill tone="amber">На перевірці</Pill>

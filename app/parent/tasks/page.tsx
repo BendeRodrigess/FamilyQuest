@@ -25,7 +25,7 @@ type FilterKey = (typeof FILTERS)[number]["key"];
 export default async function ParentTasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; task?: string }>;
 }) {
   const parent = await requireParent();
   const params = await searchParams;
@@ -167,6 +167,8 @@ export default async function ParentTasksPage({
                     childComment: task.childComment,
                     xp: task.xpReward,
                     coins: task.coinReward,
+                    // ?task= приходить зі сповіщення «Завдання виконано».
+                    highlight: task.id === params.task,
                   }}
                 />
               ) : (

@@ -8,6 +8,11 @@ import { prisma } from "@/lib/prisma";
 import { requireChild, requireParent } from "@/lib/auth";
 import { declineRedemption, fulfillRedemption, redeemReward } from "@/lib/shop";
 import { REWARD_COST_MAX, REWARD_COST_MIN, REWARD_EMOJI } from "@/lib/domain";
+import {
+  notifyRewardDeclined,
+  notifyRewardFulfilled,
+  notifyRewardRequested,
+} from "@/lib/notifications/events";
 import { type ActionState, fail, ok } from "./types";
 
 function revalidateShop() {
@@ -143,11 +148,14 @@ export async function redeemRewardAction(
   const rewardId = String(formData.get("rewardId") ?? "");
   const note = String(formData.get("note") ?? "");
 
+  let redemption;
   try {
-    await redeemReward(rewardId, child.id, note);
+    redemption = await redeemReward(rewardId, child.id, note);
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Не вдалося обміняти.");
   }
+
+  await notifyRewardRequested(redemption.id);
 
   revalidateShop();
   return ok("Заявку надіслано батькам.");
@@ -167,6 +175,8 @@ export async function fulfillRedemptionAction(
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Не вдалося позначити видачу.");
   }
+
+  await notifyRewardFulfilled(redemptionId);
 
   revalidateShop();
   return ok("Позначено як видане.");
@@ -201,6 +211,8 @@ export async function declineRedemptionAction(
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Не вдалося відхилити.");
   }
+
+  await notifyRewardDeclined(parsed.data.redemptionId);
 
   revalidateShop();
   return ok("Відхилено, коіни повернуто дитині.");
