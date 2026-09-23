@@ -115,8 +115,6 @@ async function creditTask(taskId: string, familyId: string): Promise<ApproveResu
         xp: { increment: task.xpReward },
         coinsBalance: { increment: task.coinReward },
         coinsEarnedTotal: { increment: task.coinReward },
-        // Зірочка догляду за компаньйоном — по одній за кожне зараховане завдання.
-        careStars: { increment: 1 },
       },
     });
 
