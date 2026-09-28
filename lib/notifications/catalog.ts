@@ -26,6 +26,10 @@ export const NOTIFICATION_KINDS: Record<string, NotificationKind> = {
 
   /** Батьки створили разове завдання для дитини. → дитині */
   TASK_ASSIGNED: { emoji: "🎯", category: "TASKS" },
+  /** До дедлайну лишилась приблизно година. → дитині */
+  TASK_DUE_SOON: { emoji: "⏰", category: "REMINDERS" },
+  /** Дедлайн минув, а завдання не виконане. → дитині */
+  TASK_OVERDUE: { emoji: "⌛", category: "REMINDERS" },
   /** Дитина подала завдання на перевірку. → усім батькам родини */
   TASK_SUBMITTED: { emoji: "✅", category: "RESULTS" },
   /** Батьки підтвердили виконання. → дитині */

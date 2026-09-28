@@ -1,0 +1,22 @@
+# Разовий запуск фонових нагадувань FamilyQuest.
+# Кладеться в /etc/systemd/system/familyquest-jobs.service
+#
+# Type=oneshot: служба відпрацювала — і завершилась. Триматиме її
+# розклад таймер, а не сама служба.
+
+[Unit]
+Description=FamilyQuest: нагадування про дедлайни
+After=network-online.target familyquest.service
+# Без застосунку запускати нема сенсу, але й падати через це не варто:
+# таймер просто спробує наступного разу.
+Wants=familyquest.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/familyquest-jobs
+
+# Секрет читає сам скрипт із /etc/familyquest/env, тому тут його немає.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

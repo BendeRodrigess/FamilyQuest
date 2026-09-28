@@ -1,0 +1,19 @@
+# Розклад фонових нагадувань FamilyQuest.
+# Кладеться в /etc/systemd/system/familyquest-jobs.timer
+#
+# Кожні 5 хвилин за годинником (о :00, :05, :10…). Вікно «скоро дедлайн»
+# у самому job'і — ціла година, тож навіть пропущений запуск нічого не
+# губить, а від дублів захищає унікальний dedupeKey.
+
+[Unit]
+Description=FamilyQuest: запуск нагадувань кожні 5 хвилин
+
+[Timer]
+OnCalendar=*:0/5
+# Після простою сервера чи деплою запуск наздоганяється, а не пропадає.
+Persistent=true
+AccuracySec=30s
+Unit=familyquest-jobs.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#
+# Викликає фоновий job нагадувань усередині застосунку.
+#
+# Кладеться в /usr/local/bin/familyquest-jobs поруч із familyquest-deploy
+# і familyquest-backup. Запускає його systemd-таймер, а не людина.
+#
+# Секрет передається через stdin (`curl --config -`), а не аргументом:
+# інакше він був би видимий у `ps` будь-якому користувачу системи.
+
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. /etc/familyquest/env
+
+if [ -z "${JOB_SECRET:-}" ]; then
+  echo "JOB_SECRET не заданий у /etc/familyquest/env — job вимкнений" >&2
+  exit 1
+fi
+
+printf 'header = "Authorization: Bearer %s"\n' "$JOB_SECRET" |
+  curl --silent --show-error --fail --max-time 60 \
+    --request POST \
+    --config - \
+    "http://127.0.0.1:${PORT:-3000}/api/jobs/reminders"
+
+echo

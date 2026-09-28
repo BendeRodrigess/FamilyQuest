@@ -30,7 +30,14 @@ export type NotifyInput = {
   dedupeKey?: string | null;
 };
 
-export async function notify(input: NotifyInput): Promise<void> {
+/**
+ * Що сталося зі спробою створити сповіщення. Потрібно фоновому job'у:
+ * «дубль» для нього — нормальний результат, а не збій, і в логах вони
+ * мають рахуватися окремо від справжніх помилок.
+ */
+export type NotifyResult = "created" | "duplicate" | "failed";
+
+export async function notify(input: NotifyInput): Promise<NotifyResult> {
   try {
     await prisma.notification.create({
       data: {
@@ -43,15 +50,18 @@ export async function notify(input: NotifyInput): Promise<void> {
         dedupeKey: input.dedupeKey ?? null,
       },
     });
+
+    return "created";
   } catch (error) {
     // Таке сповіщення вже є — нормальна ситуація, а не збій.
-    if (isDuplicate(error)) return;
+    if (isDuplicate(error)) return "duplicate";
 
     // Сповіщення другорядне: якщо воно не створилось, завдання все одно
     // має бути створене, і батьки не повинні бачити помилку. Але мовчки
     // ковтати причину не можна — інакше зламані сповіщення ніхто не
     // помітить. У продакшені це потрапляє в journald разом із рештою логів.
     console.error("notify:", error);
+    return "failed";
   }
 }
 
