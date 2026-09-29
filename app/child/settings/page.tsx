@@ -3,6 +3,8 @@ import { logoutAction } from "@/app/actions/auth";
 import { levelInfo, xpToAdvanceFrom } from "@/lib/levels";
 import { SectionCard } from "@/components/ui";
 import { ThemeChoice } from "@/components/theme/ThemeChoice";
+import { PushOptIn } from "@/components/PushOptIn";
+import { publicKey } from "@/lib/push";
 import { IconLogout } from "@/components/icons";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 
@@ -33,6 +35,12 @@ export default async function ChildSettingsPage() {
         <p className="mt-3 text-sm text-[var(--color-muted)]">
           Якщо забудеш пароль — попроси батьків, вони задають новий.
         </p>
+      </SectionCard>
+
+      <SectionCard title="Сповіщення">
+        {/* Публічний ключ VAPID безпечно віддавати браузеру — саме ним
+            він і підписується. Приватний лишається на сервері. */}
+        <PushOptIn publicKey={publicKey()} />
       </SectionCard>
 
       <SectionCard title="Вигляд">

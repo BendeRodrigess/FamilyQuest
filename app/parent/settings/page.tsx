@@ -3,6 +3,8 @@ import { logoutAction } from "@/app/actions/auth";
 import { BASE_XP, XP_STEP, xpToAdvanceFrom } from "@/lib/levels";
 import { SectionCard } from "@/components/ui";
 import { ThemeChoice } from "@/components/theme/ThemeChoice";
+import { PushOptIn } from "@/components/PushOptIn";
+import { publicKey } from "@/lib/push";
 import { IconLogout } from "@/components/icons";
 import { FamilyNameForm } from "@/components/parent/FamilyNameForm";
 import { FamilyPreferencesForm } from "@/components/parent/FamilyPreferencesForm";
@@ -42,6 +44,12 @@ export default async function ParentSettingsPage() {
           showSiblingProgress={parent.family.showSiblingProgress}
           overdueGraceMinutes={parent.family.overdueGraceMinutes}
         />
+      </SectionCard>
+
+      <SectionCard title="Сповіщення">
+        {/* Публічний ключ VAPID безпечно віддавати браузеру — саме ним
+            він і підписується. Приватний лишається на сервері. */}
+        <PushOptIn publicKey={publicKey()} />
       </SectionCard>
 
       <SectionCard title="Вигляд">

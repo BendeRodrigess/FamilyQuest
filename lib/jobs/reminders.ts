@@ -4,6 +4,7 @@ import { prisma } from "../prisma";
 import { formatSubmittedLabel, formatTimeLeft } from "../format";
 import { notify } from "../notifications/emit";
 import { syncTaskStatuses } from "../tasks";
+import { pushNewAnnouncements } from "./announcements";
 
 /**
  * Фонові нагадування про дедлайни.
@@ -43,6 +44,9 @@ export type JobSummary = {
   overdue: number;
   /** Скільки відхилено унікальним індексом — тобто вже надсилали. */
   duplicates: number;
+  /** Новин, за якими розіслано push, і скільки пристроїв їх прийняли. */
+  news: number;
+  newsDelivered: number;
   errors: number;
   ms: number;
 };
@@ -70,6 +74,8 @@ export async function runReminders(now: Date = new Date()): Promise<JobSummary> 
     dueSoon: 0,
     overdue: 0,
     duplicates: 0,
+    news: 0,
+    newsDelivered: 0,
     errors: 0,
     ms: 0,
   };
@@ -128,6 +134,13 @@ export async function runReminders(now: Date = new Date()): Promise<JobSummary> 
     });
   }
 
+  // Новини, які щойно стали опублікованими, теж розсилаються звідси:
+  // відкладена публікація настає сама, і хтось має це помітити.
+  const news = await pushNewAnnouncements(now);
+  summary.news = news.pending;
+  summary.newsDelivered = news.delivered;
+  summary.errors += news.errors;
+
   summary.ms = Date.now() - startedAt;
 
   // Без імен, назв завдань і будь-яких персональних даних — лише числа.
@@ -136,6 +149,7 @@ export async function runReminders(now: Date = new Date()): Promise<JobSummary> 
       ` · нагадувань ${summary.dueSoon}` +
       ` · прострочень ${summary.overdue}` +
       ` · дублів ${summary.duplicates}` +
+      ` · новин ${summary.news} (push ${summary.newsDelivered})` +
       ` · помилок ${summary.errors}` +
       ` · ${summary.ms} мс`,
   );

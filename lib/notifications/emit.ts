@@ -1,6 +1,8 @@
 import "server-only";
 
 import { prisma } from "../prisma";
+import { pushToUser } from "../push";
+import { kindOf } from "./catalog";
 
 /**
  * Єдина точка створення сповіщень — за зразком creditTask(), який так само
@@ -38,6 +40,29 @@ export type NotifyInput = {
 export type NotifyResult = "created" | "duplicate" | "failed";
 
 export async function notify(input: NotifyInput): Promise<NotifyResult> {
+  const result = await createRow(input);
+
+  // Push надсилається лише при справжньому створенні рядка — і поза
+  // блоком, що визначає результат. Тому повторне відкриття центру,
+  // перерендер сторінки чи другий запуск фонового job'а нікому нічого
+  // не надішлють: на дублі сюди просто не доходить.
+  //
+  // Виклик не може зіпсувати результат: pushToUser за контрактом не
+  // кидає помилок, а основна операція — нарахування XP, створення
+  // завдання — не повинна залежати від доступності push-сервісу.
+  if (result === "created") {
+    await pushToUser(input.userId, {
+      title: `${kindOf(input.type).emoji} ${input.title}`,
+      body: input.body,
+      href: input.href ?? null,
+      tag: input.type,
+    });
+  }
+
+  return result;
+}
+
+async function createRow(input: NotifyInput): Promise<NotifyResult> {
   try {
     await prisma.notification.create({
       data: {

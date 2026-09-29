@@ -101,6 +101,7 @@ model User {
 
   sessions          Session[]
   notifications     Notification[]
+  pushSubscriptions PushSubscription[]
   announcementReads AnnouncementRead[]
   assignedTasks     Task[]             @relation("ChildTasks")
   templates         TaskTemplate[]     @relation("ChildTemplates")
@@ -303,7 +304,13 @@ model Announcement {
   /// Порожньо — чернетка, її не бачить ніхто. Момент у майбутньому —
   /// відкладена публікація: новина з'явиться сама, коли він настане.
   publishedAt DateTime?
-  createdAt   DateTime  @default(now())
+
+  /// Коли за цією новиною розіслали push. Порожньо — ще не розсилали.
+  /// Найпростіший можливий захист від повторної розсилки: фоновий job
+  /// бере лише новини без цієї позначки й ставить її одразу після
+  /// відправлення. Окрема таблиця статусів доставки для цього зайва.
+  pushedAt  DateTime?
+  createdAt DateTime  @default(now())
 
   reads AnnouncementRead[]
 
@@ -321,5 +328,36 @@ model AnnouncementRead {
   readAt DateTime @default(now())
 
   @@id([announcementId, userId])
+  @@index([userId])
+}
+
+/// Push-підписка одного браузера на одному пристрої.
+///
+/// Один користувач має стільки підписок, скільки в нього пристроїв:
+/// телефон, планшет, ноутбук. Тому «один користувач — одна підписка»
+/// не закладено ніде.
+model PushSubscription {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Адреса, яку видав push-сервіс браузера. За специфікацією глобально
+  /// унікальна — тому спільний планшет не доставлятиме чужі сповіщення:
+  /// підписка просто перейде до того, хто зайшов останнім.
+  endpoint String @unique
+  /// Ключі шифрування payload. Без них push-сервіс не зможе передати
+  /// вміст, а браузер — його прочитати.
+  p256dh   String
+  auth     String
+
+  /// Допомагає людині впізнати свій пристрій у списку. Без точної моделі.
+  userAgent String?
+
+  createdAt     DateTime  @default(now())
+  lastSuccessAt DateTime?
+  /// Скільки разів поспіль відправлення не вдалося. Тимчасовий збій
+  /// push-сервісу не повинен одразу видаляти підписку.
+  failureCount  Int       @default(0)
+
   @@index([userId])
 }
