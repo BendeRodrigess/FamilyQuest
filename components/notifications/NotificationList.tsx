@@ -6,27 +6,19 @@ import { useTransition } from "react";
 
 import {
   markAllNotificationsReadAction,
+  markAnnouncementReadAction,
   markNotificationReadAction,
 } from "@/app/actions/notifications";
-import { kindOf } from "@/lib/notifications/catalog";
+import { feedEmoji } from "@/lib/notifications/catalog";
+import type { FeedItem } from "@/lib/notifications/feed";
 import { LocalDateTime } from "@/components/LocalDateTime";
 import { IconBell, IconCheck } from "@/components/icons";
 import { EmptyState } from "@/components/ui";
 
-export type NotificationItem = {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  href: string | null;
-  createdAtIso: string;
-  /** Підпис дати, порахований сервером за збереженою зоною. */
-  dateLabel: string;
-  read: boolean;
-};
-
 /**
- * Центр сповіщень.
+ * Центр сповіщень: персональні сповіщення й новини FamilyQuest одним
+ * списком. Для людини це не два різні потоки, а одна стрічка подій —
+ * різницю видно лише за емодзі.
  *
  * Прочитані не зникають — людина має бачити, що саме їй писали. Вони лише
  * блякнуть і втрачають крапку, тому свіже видно одразу.
@@ -34,7 +26,7 @@ export type NotificationItem = {
  * Розмітка розрахована насамперед на телефон: один стовпчик, велика
  * область натискання, дата окремим рядком.
  */
-export function NotificationList({ items }: { items: NotificationItem[] }) {
+export function NotificationList({ items }: { items: FeedItem[] }) {
   const [pending, startTransition] = useTransition();
   const unread = items.filter((item) => !item.read).length;
 
@@ -72,22 +64,30 @@ export function NotificationList({ items }: { items: NotificationItem[] }) {
   );
 }
 
-function Row({ item }: { item: NotificationItem }) {
+function Row({ item }: { item: FeedItem }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const { emoji } = kindOf(item.type);
+  const emoji = feedEmoji(item.kind, item.type);
+
+  // Персональне сповіщення й новина позначаються прочитаними різними
+  // діями: у новини статус прочитання зберігається окремою сутністю.
+  const markRead = () =>
+    item.kind === "announcement"
+      ? markAnnouncementReadAction(item.id)
+      : markNotificationReadAction(item.id);
 
   // Натискання на сповіщення веде до завдання й одночасно позначає
   // прочитаним. Перехід не чекає на сервер: посилання звичайне, тож
   // працює й без JavaScript.
   function open() {
     if (item.read) return;
-    startTransition(() => markNotificationReadAction(item.id));
+    startTransition(markRead);
   }
 
-  function markRead() {
+  // Прочитати, не переходячи нікуди. Для новини без href це єдиний спосіб.
+  function markReadInPlace() {
     startTransition(async () => {
-      await markNotificationReadAction(item.id);
+      await markRead();
       router.refresh();
     });
   }
@@ -140,7 +140,7 @@ function Row({ item }: { item: NotificationItem }) {
       {!item.read && (
         <button
           type="button"
-          onClick={markRead}
+          onClick={markReadInPlace}
           disabled={pending}
           title="Позначити прочитаним"
           aria-label={`Позначити прочитаним: ${item.title}`}

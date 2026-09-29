@@ -47,7 +47,29 @@ export const NOTIFICATION_KINDS: Record<string, NotificationKind> = {
   REWARD_DECLINED: { emoji: "↩️", category: "REWARDS" },
 };
 
+/**
+ * Категорії новин про сам FamilyQuest. Лежать поруч із типами сповіщень
+ * навмисно: у центрі вони показуються одним списком, тож і правила
+ * оформлення мають бути в одному місці.
+ */
+export const ANNOUNCEMENT_KINDS: Record<string, NotificationKind> = {
+  /** Нова функція. */
+  FEATURE: { emoji: "🚀", category: "NEWS" },
+  /** Виправлення помилки. */
+  FIX: { emoji: "🛠", category: "NEWS" },
+  /** Покращення наявного. */
+  UPDATE: { emoji: "✨", category: "NEWS" },
+  /** Важливе системне повідомлення. */
+  IMPORTANT: { emoji: "⚠️", category: "IMPORTANT" },
+};
+
 /** Невідомий тип не ламає список: показуємо нейтральний дзвіночок. */
 export function kindOf(type: string): NotificationKind {
   return NOTIFICATION_KINDS[type] ?? { emoji: "🔔", category: "TASKS" };
+}
+
+/** Емодзі для елемента стрічки — байдуже, сповіщення це чи новина. */
+export function feedEmoji(kind: "notification" | "announcement", type: string): string {
+  if (kind === "announcement") return ANNOUNCEMENT_KINDS[type]?.emoji ?? "📣";
+  return kindOf(type).emoji;
 }

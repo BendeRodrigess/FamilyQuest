@@ -99,12 +99,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions      Session[]
-  notifications Notification[]
-  assignedTasks Task[]             @relation("ChildTasks")
-  templates     TaskTemplate[]     @relation("ChildTemplates")
-  redemptions   RewardRedemption[] @relation("ChildRedemptions")
-  ledger        LedgerEntry[]
+  sessions          Session[]
+  notifications     Notification[]
+  announcementReads AnnouncementRead[]
+  assignedTasks     Task[]             @relation("ChildTasks")
+  templates         TaskTemplate[]     @relation("ChildTemplates")
+  redemptions       RewardRedemption[] @relation("ChildRedemptions")
+  ledger            LedgerEntry[]
 
   @@index([familyId])
 }
@@ -277,4 +278,48 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+/// Новина про сам FamilyQuest: нова функція, виправлення, оновлення.
+///
+/// Один рядок — одна публікація, незалежно від кількості користувачів.
+/// Персональні сповіщення для цього не підходять: новина для десяти тисяч
+/// акаунтів створила б десять тисяч однакових рядків.
+model Announcement {
+  id String @id @default(cuid())
+
+  // Рядками, як статуси завдань і типи сповіщень — новий різновид
+  // не потребує міграції схеми.
+  /// FEATURE | FIX | UPDATE | IMPORTANT
+  category String
+  /// ALL | PARENTS | CHILDREN. Згодом сюди ж ляжуть вужчі сегменти.
+  audience String @default("ALL")
+
+  title String
+  body  String
+  /// Куди веде натискання. Порожньо — новина просто позначається прочитаною.
+  href  String?
+
+  /// Порожньо — чернетка, її не бачить ніхто. Момент у майбутньому —
+  /// відкладена публікація: новина з'явиться сама, коли він настане.
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  reads AnnouncementRead[]
+
+  @@index([publishedAt])
+}
+
+/// Хто прочитав новину. Рядок з'являється лише в момент прочитання,
+/// тому публікація не створює жодного запису на користувача.
+model AnnouncementRead {
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  readAt DateTime @default(now())
+
+  @@id([announcementId, userId])
+  @@index([userId])
 }

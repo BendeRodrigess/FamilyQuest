@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#
+# Публікація новини FamilyQuest на сервері.
+#
+# Кладеться в /usr/local/bin/familyquest-announce поруч із рештою
+# скриптів. Потрібен лише щоб підставити DATABASE_URL із
+# /etc/familyquest/env — усю роботу робить scripts/announce.mjs.
+#
+#   familyquest-announce --category=FIX --audience=ALL \
+#     --title="🛠 Виправлення" --body="Виправлено час дедлайну."
+
+set -euo pipefail
+
+# shellcheck disable=SC1091
+. /etc/familyquest/env
+export DATABASE_URL
+
+cd /var/www/familyquest
+exec node scripts/announce.mjs "$@"

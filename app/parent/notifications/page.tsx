@@ -1,29 +1,15 @@
 import { requireParent } from "@/lib/auth";
-import { listNotifications } from "@/lib/notifications/query";
-import { formatSubmittedLabel } from "@/lib/format";
+import { buildFeed } from "@/lib/notifications/feed";
 import { SectionCard } from "@/components/ui";
-import {
-  NotificationList,
-  type NotificationItem,
-} from "@/components/notifications/NotificationList";
+import { NotificationList } from "@/components/notifications/NotificationList";
 
 export default async function ParentNotificationsPage() {
   const parent = await requireParent();
   const now = new Date();
 
-  // Адресат — виключно з сесії. Жодного ID з боку клієнта.
-  const notifications = await listNotifications(parent.id);
-
-  const items: NotificationItem[] = notifications.map((item) => ({
-    id: item.id,
-    type: item.type,
-    title: item.title,
-    body: item.body,
-    href: item.href,
-    createdAtIso: item.createdAt.toISOString(),
-    dateLabel: formatSubmittedLabel(item.createdAt, now, parent.timeZone),
-    read: item.readAt !== null,
-  }));
+  // Адресат і роль — виключно з сесії. Жодного ID з боку клієнта:
+  // саме роль вирішує, які новини цей користувач узагалі бачить.
+  const items = await buildFeed(parent.id, parent.role, parent.timeZone, now);
 
   return (
     <div className="mx-auto flex max-w-[640px] flex-col gap-5">

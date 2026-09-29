@@ -4,7 +4,7 @@ import { requireParent } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { syncTaskStatuses } from "@/lib/tasks";
 import { generateTodayTasks } from "@/lib/templates";
-import { unreadCount } from "@/lib/notifications/query";
+import { unreadTotal } from "@/lib/notifications/feed";
 import { AppShell } from "@/components/AppShell";
 import { TimeZoneSync } from "@/components/TimeZoneSync";
 
@@ -23,7 +23,9 @@ export default async function ParentLayout({ children }: { children: ReactNode }
     prisma.rewardRedemption.count({
       where: { familyId: parent.familyId, status: "PENDING" },
     }),
-    unreadCount(parent.id),
+    // Лічильник біля 🔔 — персональні сповіщення плюс непрочитані
+    // новини, доступні цій ролі.
+    unreadTotal(parent.id, parent.role),
   ]);
 
   return (

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { syncTaskStatuses } from "@/lib/tasks";
 import { generateTodayTasks } from "@/lib/templates";
 import { levelInfo } from "@/lib/levels";
-import { unreadCount } from "@/lib/notifications/query";
+import { unreadTotal } from "@/lib/notifications/feed";
 import { AppShell } from "@/components/AppShell";
 import { TimeZoneSync } from "@/components/TimeZoneSync";
 
@@ -19,7 +19,9 @@ export default async function ChildLayout({ children }: { children: ReactNode })
     prisma.task.count({
       where: { childId: child.id, status: { in: ["ACTIVE", "REJECTED"] } },
     }),
-    unreadCount(child.id),
+    // Лічильник біля 🔔 — персональні сповіщення плюс непрочитані
+    // новини, доступні цій ролі.
+    unreadTotal(child.id, child.role),
   ]);
 
   const info = levelInfo(child.xp);
